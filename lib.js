@@ -1,74 +1,55 @@
-/**
- * @template T
- * @param {T} value
- * @returns {ADT<T>}
- */
-function ADT(value) {
-  return Object.create(ADT.prototype, {
-    value: { value, writable: true, enumerable: true },
-  })
-}
-
-ADT.prototype.of = function(value) {
-  return ADT(value)
-}
-
-ADT.prototype.map = function(fn) {
-  return ADT(fn(this.value))
+const base = {
+  map(fn) {
+    return this.value ? this.constructor(fn(this.value)) : this
+  },
+  isa(constructor) {
+    return this instanceof constructor
+  },
 }
 
 /**
  * @template T
- * @param {T} value
- * @returns {Atom<T>}
+ * @type {ADT.Some<T>}
  */
-function Atom(value) {
-  return Object.create(Atom.prototype, {
+function SomeType(value) {
+  return Object.create(SomeType.prototype, {
     value: { value, writable: true, enumerable: true },
   })
 }
 
-Atom.prototype = Object.create(ADT.prototype)
-Atom.prototype.constructor = Atom
-
-Atom.prototype.unwrap = function() {
-  if (this.value !== undefined) {
-    return this.value
-  } else {
-    throw new Error(`Unwrapped an empty Atom`)
-  }
-}
+SomeType.prototype = Object.create(base)
+SomeType.prototype.constructor = SomeType
 
 /**
- * @template T
- * @param {T} value
- * @returns {Some<T>}
+ * @type {ADT.None}
  */
-function Some(value) {
-  return Object.create(Some.prototype, {
-    value: { value, writable: true, enumerable: true },
-  })
+function NoneType() {
+  return Object.create(NoneType.prototype)
 }
 
-Some.prototype = Object.create(Atom.prototype)
-Some.prototype.constructor = Some
+NoneType.prototype = Object.create(base)
+NoneType.prototype.constructor = NoneType
 
-Some.prototype.map = function(fn) {
-  return Some(fn(this.value))
-}
-
-/**
- * @returns {None}
- */
-function None() {
-  return Object.create(None.prototype)
-}
-
-None.prototype = Object.create(Atom.prototype)
-None.prototype.constructor = None
-
-None.prototype.map = function(fn) {
+NoneType.prototype.map = function(fn) {
   return this
 }
 
-export { None, Some }
+// /**
+//  * @template T
+//  * @type {ADT.List<T>}
+//  */
+// function ListType(items) {
+//   return Object.create(ListType.prototype, {
+//     items: { value: items, writable: true, enumerable: true },
+//   })
+// }
+
+// ListType.prototype.filter = function(predicate) {
+//   return ListType(this.items.filter(predicate))
+// }
+
+// ListType.prototype.toArray = function() {
+//   return this.items
+// }
+
+export { NoneType as None, SomeType as Some }

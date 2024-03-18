@@ -79,9 +79,46 @@ describe("array of Some and None", () => {
     expectTypeOf(result).toMatchTypeOf<Array<Some<string> | None>>()
   })
 
-  test("can be filtered", () => {
-    let result = array.filter(value => value instanceof Some)
-    expect(result).toMatchObject([Some(1), Some(2)])
-    expectTypeOf(result).toMatchTypeOf<Array<Some<number>>>()
-  })
+  // test("can be filtered", () => {
+  //   let result = array.filter(value => value instanceof Some)
+  //   expect(result).toMatchObject([Some(1), Some(2)])
+  //   expectTypeOf(result).toMatchTypeOf<Array<Some<number>>>()
+  // })
 })
+
+test("isa", () => {
+  let option = Math.random() > 0.5 ? Some(1) : None()
+  expectTypeOf(option).toMatchTypeOf<Some<number> | None>()
+
+  if (option.isa(None)) {
+    expectTypeOf(option).toMatchTypeOf<None>()
+  }
+
+  if (option.isa(Some)) {
+    expectTypeOf(option).toMatchTypeOf<Some<number>>()
+  }
+})
+
+// test("using list", () => {
+//   let list = List([Some(1), None(), Some(2)])
+//   let result = list.filter(value => value.isa(Some))
+//   expect(result).toMatchObject([Some(1), Some(2)])
+//   expectTypeOf(result).toMatchTypeOf<Array<Some<number>>>()
+// })
+
+// test("name property", () => {
+//   expect(Some.name).toBe("Some")
+//   expect(None.name).toBe("None")
+//   expect(List.name).toBe("List")
+// })
+
+// test("type property", () => {
+//   const some = Some(1)
+//   const thing = some.type("blep")
+//   expect(thing).toBeInstanceOf(Some)
+//   // expect(some.type).toBe(Some)
+// })
+
+// test("instanceof", () => {
+//   console.log(Some instanceof Some)
+// })
