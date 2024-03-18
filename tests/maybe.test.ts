@@ -22,6 +22,14 @@ describe("constructors", () => {
 
     expectTypeOf(nothing).toMatchTypeOf<Nothing>()
   })
+
+  test("of", () => {
+    let first = Just(1)
+    let second = first.of("two")
+    expectTypeOf(second).toMatchTypeOf<Just<string>>()
+    expect(second).toBeInstanceOf(first.of)
+    expect(second).not.toBe(first)
+  })
 })
 
 describe("map", () => {
@@ -56,6 +64,48 @@ describe("map", () => {
       let result = nothing.map(value => String(value))
       expect(result).toBeInstanceOf(Nothing)
       expectTypeOf(result).toMatchTypeOf<Nothing>()
+    })
+  })
+})
+
+describe("narrowing", () => {
+  describe("with instanceof", () => {
+    test("Maybe to Just", () => {
+      let maybe: Maybe<number> = Just(1)
+      if (maybe instanceof Just) {
+        expectTypeOf(maybe).toMatchTypeOf<Just<number>>()
+      } else {
+        expect.unreachable()
+      }
+    })
+
+    test("Maybe to Nothing", () => {
+      let maybe: Maybe<number> = Nothing()
+      if (maybe instanceof Nothing) {
+        expectTypeOf(maybe).toMatchTypeOf<Nothing>()
+      } else {
+        expect.unreachable()
+      }
+    })
+  })
+
+  describe("with isa", () => {
+    test("Maybe to Just", () => {
+      let maybe: Maybe<number> = Just(1)
+      if (maybe.isa(Just)) {
+        expectTypeOf(maybe).toMatchTypeOf<Just<number>>()
+      } else {
+        expect.unreachable()
+      }
+    })
+
+    test("Maybe to Nothing", () => {
+      let maybe: Maybe<number> = Nothing()
+      if (maybe.isa(Nothing)) {
+        expectTypeOf(maybe).toMatchTypeOf<Nothing>()
+      } else {
+        expect.unreachable()
+      }
     })
   })
 })

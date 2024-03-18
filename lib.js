@@ -1,7 +1,10 @@
-/** @type {ADT.Constructors} */
+/** @type {Constructors} */
 // @ts-ignore
-const ADT = () => {
+const ADT = (() => {
   const base = {
+    isa(constructor) {
+      return this instanceof constructor
+    },
     map(fn) {
       return this.constructor(fn(this.value))
     },
@@ -9,7 +12,8 @@ const ADT = () => {
 
   function Just(value) {
     return Object.create(Just.prototype, {
-      value: { value, writable: true, enumerable: true },
+      value: { value, enumerable: true },
+      of: { value: Just },
     })
   }
 
@@ -17,7 +21,9 @@ const ADT = () => {
   Just.prototype.constructor = Just
 
   function Nothing() {
-    return Object.create(Nothing.prototype)
+    return Object.create(Nothing.prototype, {
+      of: { value: Nothing },
+    })
   }
 
   Nothing.prototype = Object.create(base)
@@ -31,6 +37,6 @@ const ADT = () => {
     Just,
     Nothing,
   }
-}
+})()
 
 export { ADT }
