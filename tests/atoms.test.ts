@@ -1,7 +1,7 @@
 import { describe, expect, expectTypeOf, test } from "vitest"
 
 import { ADT } from "../lib.js"
-const { Just, Nothing } = ADT
+const { Just, Nothing, Failure } = ADT
 
 describe("constructors", () => {
   test("Just", () => {
@@ -9,9 +9,10 @@ describe("constructors", () => {
 
     expect(just).toBeInstanceOf(Just)
     expect(just).not.toBeInstanceOf(Nothing)
+    expect(just).not.toBeInstanceOf(Failure)
 
-    expect(just).toMatchObject({ value: 1 })
     expectTypeOf(just).toMatchTypeOf<Just<number>>()
+    expect(just).toMatchObject({ value: 1 })
   })
 
   test("Nothing", () => {
@@ -19,8 +20,34 @@ describe("constructors", () => {
 
     expect(nothing).toBeInstanceOf(Nothing)
     expect(nothing).not.toBeInstanceOf(Just)
+    expect(nothing).not.toBeInstanceOf(Failure)
 
     expectTypeOf(nothing).toMatchTypeOf<Nothing>()
+  })
+
+  test("Failure", () => {
+    let failure = Failure("boo")
+
+    expect(failure).toBeInstanceOf(Error)
+    expect(failure).toBeInstanceOf(Failure)
+    expectTypeOf(failure).toMatchTypeOf<Failure>()
+
+    expect(() => {
+      throw failure
+    }).toThrowError("boo")
+  })
+
+  test("Failure (existing error)", () => {
+    let error = new Error("boo")
+    let failure = Failure(error)
+
+    expect(failure).toBeInstanceOf(Error)
+    expect(failure).toBeInstanceOf(Failure)
+    expectTypeOf(failure).toMatchTypeOf<Failure>()
+
+    expect(() => {
+      throw failure
+    }).toThrowError("boo")
   })
 
   test("of", () => {
@@ -48,6 +75,13 @@ describe("map", () => {
       expect(result).toBeInstanceOf(Nothing)
       expectTypeOf(result).toMatchTypeOf<Nothing>()
     })
+
+    test("Failure", () => {
+      let failure = Failure("error")
+      let result = failure.map(value => value + 1)
+      expect(result).toBeInstanceOf(Failure)
+      expectTypeOf(result).toMatchTypeOf<Failure>()
+    })
   })
 
   describe("with a type-modifying function", () => {
@@ -64,6 +98,13 @@ describe("map", () => {
       let result = nothing.map(value => String(value))
       expect(result).toBeInstanceOf(Nothing)
       expectTypeOf(result).toMatchTypeOf<Nothing>()
+    })
+
+    test("Failure", () => {
+      let failure = Failure("error")
+      let result = failure.map(value => String(value))
+      expect(result).toBeInstanceOf(Failure)
+      expectTypeOf(result).toMatchTypeOf<Failure>()
     })
   })
 })
@@ -87,6 +128,24 @@ describe("narrowing", () => {
         expect.unreachable()
       }
     })
+
+    test("Result to Just", () => {
+      let result: Result<number> = Just(1)
+      if (result instanceof Just) {
+        expectTypeOf(result).toMatchTypeOf<Just<number>>()
+      } else {
+        expect.unreachable()
+      }
+    })
+
+    test("Result to Failure", () => {
+      let result: Result<number> = Failure()
+      if (result instanceof Failure) {
+        expectTypeOf(result).toMatchTypeOf<Failure>()
+      } else {
+        expect.unreachable()
+      }
+    })
   })
 
   describe("with isa", () => {
@@ -103,6 +162,24 @@ describe("narrowing", () => {
       let maybe: Maybe<number> = Nothing()
       if (maybe.isa(Nothing)) {
         expectTypeOf(maybe).toMatchTypeOf<Nothing>()
+      } else {
+        expect.unreachable()
+      }
+    })
+
+    test("Result to Just", () => {
+      let result: Result<number> = Just(1)
+      if (result.isa(Just)) {
+        expectTypeOf(result).toMatchTypeOf<Just<number>>()
+      } else {
+        expect.unreachable()
+      }
+    })
+
+    test("Result to Failure", () => {
+      let result: Result<number> = Failure()
+      if (result.isa(Failure)) {
+        expectTypeOf(result).toMatchTypeOf<Failure>()
       } else {
         expect.unreachable()
       }
@@ -129,5 +206,27 @@ describe("Maybe", () => {
     let result = array.map(value => value.map(stringify))
     expect(result).toMatchObject([Just("1"), Nothing(), Just("2")])
     expectTypeOf(result).toMatchTypeOf<Array<Maybe<string>>>()
+  })
+})
+
+describe("Result", () => {
+  let array: Result<number>[] = [Just(1), Failure(), Just(2)]
+
+  test("has the expected type", () => {
+    expectTypeOf(array).toMatchTypeOf<Array<Result<number>>>()
+  })
+
+  test("can be mapped (type-preserving)", () => {
+    let add_one = (value: number) => value + 1
+    let result = array.map(value => value.map(add_one))
+    expect(result).toMatchObject([Just(2), Failure(), Just(3)])
+    expectTypeOf(result).toMatchTypeOf<Array<Result<number>>>()
+  })
+
+  test("can be mapped (type-modifying)", () => {
+    let stringify = (value: number) => String(value)
+    let result = array.map(value => value.map(stringify))
+    expect(result).toMatchObject([Just("1"), Failure(), Just("2")])
+    expectTypeOf(result).toMatchTypeOf<Array<Result<string>>>()
   })
 })

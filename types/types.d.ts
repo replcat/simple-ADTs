@@ -1,8 +1,3 @@
-declare namespace Discriminants {
-  type Just = "Just"
-  type Nothing = "Nothing"
-}
-
 type Constructors = {
   Just:
     & (<T>(value: T) => Just<T>)
@@ -10,6 +5,9 @@ type Constructors = {
   Nothing:
     & (() => Nothing)
     & (new() => Nothing)
+  Failure:
+    & ((...args: any[]) => Failure)
+    & (new(...args: any[]) => Failure)
 }
 
 interface Mysterious<T> {
@@ -36,4 +34,10 @@ interface Nothing extends Atomic<never> {
   map(fn: (value: never) => unknown): Nothing
 }
 
+interface Failure extends Atomic<never>, Error {
+  of: Constructors["Failure"]
+  map(fn: (value: never) => unknown): Failure
+}
+
 type Maybe<T> = Just<T> | Nothing
+type Result<T> = Just<T> | Failure
