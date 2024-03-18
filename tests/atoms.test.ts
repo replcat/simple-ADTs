@@ -1,12 +1,10 @@
 import { assert, assertType, describe, expect, expectTypeOf, test } from "vitest"
-import { ADT, Atom, None, Some } from "../lib.js"
+import { None, Some } from "../lib.js"
 
 describe("constructors", () => {
   test("Some", () => {
-    let some = new Some(1)
+    let some = Some(1)
 
-    expect(some).toBeInstanceOf(ADT)
-    expect(some).toBeInstanceOf(Atom)
     expect(some).toBeInstanceOf(Some)
     expect(some).not.toBeInstanceOf(None)
 
@@ -15,10 +13,8 @@ describe("constructors", () => {
   })
 
   test("None", () => {
-    let none = new None()
+    let none = None()
 
-    expect(none).toBeInstanceOf(ADT)
-    expect(none).toBeInstanceOf(Atom)
     expect(none).toBeInstanceOf(None)
     expect(none).not.toBeInstanceOf(Some)
 
@@ -29,7 +25,7 @@ describe("constructors", () => {
 describe("map", () => {
   describe("with a type-preserving function", () => {
     test("Some", () => {
-      let some = new Some(1)
+      let some = Some(1)
       let result = some.map(value => value + 1)
       expect(result).toBeInstanceOf(Some)
       expectTypeOf(result).toMatchTypeOf<Some<number>>()
@@ -37,7 +33,7 @@ describe("map", () => {
     })
 
     test("None", () => {
-      let none = new None()
+      let none = None()
       let result = none.map(value => value + 1)
       expect(result).toBeInstanceOf(None)
       expectTypeOf(result).toMatchTypeOf<None>()
@@ -46,7 +42,7 @@ describe("map", () => {
 
   describe("with a type-modifying function", () => {
     test("Some", () => {
-      let some = new Some(1)
+      let some = Some(1)
       let result = some.map(value => String(value))
       expect(result).toBeInstanceOf(Some)
       expectTypeOf(result).toMatchTypeOf<Some<string>>()
@@ -54,7 +50,7 @@ describe("map", () => {
     })
 
     test("None", () => {
-      let none = new None()
+      let none = None()
       let result = none.map(value => String(value))
       expect(result).toBeInstanceOf(None)
       expectTypeOf(result).toMatchTypeOf<None>()
@@ -63,7 +59,7 @@ describe("map", () => {
 })
 
 describe("array of Some and None", () => {
-  let array = [new Some(1), new None(), new Some(2)]
+  let array = [Some(1), None(), Some(2)]
 
   test("has the expected type", () => {
     expectTypeOf(array).toMatchTypeOf<Array<Some<number> | None>>()
@@ -72,20 +68,20 @@ describe("array of Some and None", () => {
   test("can be mapped (type-preserving)", () => {
     let add_one = (value: number) => value + 1
     let result = array.map(value => value.map(add_one))
-    expect(result).toMatchObject([new Some(2), new None(), new Some(3)])
+    expect(result).toMatchObject([Some(2), None(), Some(3)])
     expectTypeOf(result).toMatchTypeOf<Array<Some<number> | None>>()
   })
 
   test("can be mapped (type-modifying)", () => {
     let stringify = (value: number) => String(value)
     let result = array.map(value => value.map(stringify))
-    expect(result).toMatchObject([new Some("1"), new None(), new Some("2")])
+    expect(result).toMatchObject([Some("1"), None(), Some("2")])
     expectTypeOf(result).toMatchTypeOf<Array<Some<string> | None>>()
   })
 
-  // FAILS //
-  // test("can be filtered", () => {
-  //   let result = array.filter(value => value instanceof Some)
-  //   expectTypeOf(result).toMatchTypeOf<Array<Some<number>>>()
-  // })
+  test("can be filtered", () => {
+    let result = array.filter(value => value instanceof Some)
+    expect(result).toMatchObject([Some(1), Some(2)])
+    expectTypeOf(result).toMatchTypeOf<Array<Some<number>>>()
+  })
 })

@@ -1,80 +1,74 @@
 /**
  * @template T
- * @abstract
+ * @param {T} value
+ * @returns {ADT<T>}
  */
-export class ADT {
-  /**
-   * @param {T} value
-   * @returns {this}
-   */
-  of(value) {
-    // @ts-ignore
-    return new this.constructor(value)
-  }
+function ADT(value) {
+  return Object.create(ADT.prototype, {
+    value: { value, writable: true, enumerable: true },
+  })
+}
 
-  /**
-   * @template U
-   * @param {(value: T) => U} fn
-   * @returns {ADT<U>}
-   */
-  map(fn) {
-    // @ts-ignore
-    return new this.constructor(fn(this.value))
+ADT.prototype.of = function(value) {
+  return ADT(value)
+}
+
+ADT.prototype.map = function(fn) {
+  return ADT(fn(this.value))
+}
+
+/**
+ * @template T
+ * @param {T} value
+ * @returns {Atom<T>}
+ */
+function Atom(value) {
+  return Object.create(Atom.prototype, {
+    value: { value, writable: true, enumerable: true },
+  })
+}
+
+Atom.prototype = Object.create(ADT.prototype)
+Atom.prototype.constructor = Atom
+
+Atom.prototype.unwrap = function() {
+  if (this.value !== undefined) {
+    return this.value
+  } else {
+    throw new Error(`Unwrapped an empty Atom`)
   }
 }
 
 /**
  * @template T
- * @extends {ADT<T>}
- * @abstract
+ * @param {T} value
+ * @returns {Some<T>}
  */
-export class Atom extends ADT {
-  unwrap() {
-    if ("value" in this) {
-      return this.value
-    } else {
-      throw new Error(`Unwrapped an empty ${this.constructor.name}`)
-    }
-  }
+function Some(value) {
+  return Object.create(Some.prototype, {
+    value: { value, writable: true, enumerable: true },
+  })
+}
+
+Some.prototype = Object.create(Atom.prototype)
+Some.prototype.constructor = Some
+
+Some.prototype.map = function(fn) {
+  return Some(fn(this.value))
 }
 
 /**
- * @template T
- * @extends {Atom<T>}
+ * @returns {None}
  */
-export class Some extends Atom {
-  value
-
-  /**
-   * @param {T} value
-   */
-  constructor(value) {
-    super()
-    this.value = value
-  }
-
-  /**
-   * @template U
-   * @param {(value: T) => U} fn
-   * @returns {Some<U>}
-   * @override
-   */
-  map(fn) {
-    return new Some(fn(this.value))
-  }
+function None() {
+  return Object.create(None.prototype)
 }
 
-/**
- * @extends {Atom<never>}
- */
-export class None extends Atom {
-  /**
-   * @template U
-   * @param {(value: never) => U} fn
-   * @returns {None}
-   * @override
-   */
-  map(fn) {
-    return this
-  }
+None.prototype = Object.create(Atom.prototype)
+None.prototype.constructor = None
+
+None.prototype.map = function(fn) {
+  return this
 }
+
+export { None, Some }
