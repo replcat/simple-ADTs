@@ -2,9 +2,15 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "vitest"
+    "check": "pnpm run format && pnpm run compile && pnpm run test",
+    "compile": "tsc",
+    "format": "dprint fmt",
+    "test": "vitest --no-watch"
   },
   "devDependencies": {
+    "@types/node": "^20.11",
+    "dprint": "^0.45",
+    "typescript": "^5.4",
     "vitest": "^1"
   }
 }
