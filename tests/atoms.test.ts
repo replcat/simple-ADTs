@@ -25,7 +25,7 @@ describe("constructors", () => {
     expectTypeOf(nothing).toMatchTypeOf<Nothing>()
   })
 
-  test("Failure", () => {
+  test("Failure (string error)", () => {
     let failure = Failure("boo")
 
     expect(failure).toBeInstanceOf(Error)
@@ -34,7 +34,7 @@ describe("constructors", () => {
 
     expect(() => {
       throw failure
-    }).toThrowError("boo")
+    }).toThrowErrorMatchingInlineSnapshot(`[Failure: boo]`)
   })
 
   test("Failure (existing error)", () => {
@@ -47,7 +47,31 @@ describe("constructors", () => {
 
     expect(() => {
       throw failure
-    }).toThrowError("boo")
+    }).toThrowErrorMatchingInlineSnapshot(`[Failure: boo]`)
+  })
+
+  test("Failure (with notes)", () => {
+    let failure = Failure("boo", { mood: "pretty scary" })
+
+    expect(failure).toBeInstanceOf(Error)
+    expect(failure).toBeInstanceOf(Failure)
+    expectTypeOf(failure).toMatchTypeOf<Failure>()
+
+    expect(() => {
+      throw failure
+    }).toThrowErrorMatchingInlineSnapshot(`[Failure: boo { mood: "pretty scary" }]`)
+  })
+
+  test("Failure (no arguments)", () => {
+    let failure = Failure()
+
+    expect(failure).toBeInstanceOf(Error)
+    expect(failure).toBeInstanceOf(Failure)
+    expectTypeOf(failure).toMatchTypeOf<Failure>()
+
+    expect(() => {
+      throw failure
+    }).toThrowErrorMatchingInlineSnapshot(`[Failure]`)
   })
 })
 
@@ -93,9 +117,10 @@ describe("map", () => {
     })
 
     test("Failure", () => {
-      let failure = Failure("error")
+      let failure = Failure("some error")
       let result = failure.map(value => String(value))
       expect(result).toBeInstanceOf(Failure)
+      expect(result.message).toBe("some error")
       expectTypeOf(result).toMatchTypeOf<Failure>()
     })
   })
@@ -220,5 +245,19 @@ describe("Result", () => {
     let result = array.map(value => value.map(stringify))
     expect(result).toMatchObject([Just("1"), Failure(), Just("2")])
     expectTypeOf(result).toMatchTypeOf<Array<Result<string>>>()
+  })
+})
+
+describe("error behaviour", () => {
+  test("constructing a Just of null or undefined", () => {
+    // @ts-expect-error
+    expect(() => Just(undefined)).toThrow(TypeError)
+    // @ts-expect-error
+    expect(() => Just(null)).toThrow(TypeError)
+  })
+
+  test("constructing a Nothing with a value", () => {
+    // @ts-expect-error
+    expect(() => Nothing(1)).toThrow(TypeError)
   })
 })

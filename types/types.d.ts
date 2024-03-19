@@ -1,13 +1,13 @@
 type Constructors = {
   Just:
-    & (<T>(value: T) => Just<T>)
-    & (new<T>(value: T) => Just<T>)
+    & (<T>(value: NonNullable<T>) => Just<NonNullable<T>>)
+    & (new<T>(value: NonNullable<T>) => Just<NonNullable<T>>)
   Nothing:
     & (() => Nothing)
     & (new() => Nothing)
   Failure:
-    & ((arg?: any) => Failure)
-    & (new(arg?: any) => Failure)
+    & ((error?: Error | string, ...notes: any) => Failure)
+    & (new(error?: Error | string, ...notes: any) => Failure)
 }
 
 interface ADT<T = unknown> {
@@ -17,7 +17,7 @@ interface ADT<T = unknown> {
 }
 
 interface Just<T = unknown> extends ADT<T> {
-  value: T
+  value: NonNullable<T>
   map<U>(fn: (value: T) => U): Just<U>
 }
 
