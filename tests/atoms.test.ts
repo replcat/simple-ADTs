@@ -49,14 +49,6 @@ describe("constructors", () => {
       throw failure
     }).toThrowError("boo")
   })
-
-  test("of", () => {
-    let first = Just(1)
-    let second = first.of("two")
-    expectTypeOf(second).toMatchTypeOf<Just<string>>()
-    expect(second).toBeInstanceOf(first.of)
-    expect(second).not.toBe(first)
-  })
 })
 
 describe("map", () => {

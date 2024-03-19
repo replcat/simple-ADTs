@@ -6,37 +6,27 @@ type Constructors = {
     & (() => Nothing)
     & (new() => Nothing)
   Failure:
-    & ((...args: any[]) => Failure)
-    & (new(...args: any[]) => Failure)
+    & ((arg?: any) => Failure)
+    & (new(arg?: any) => Failure)
 }
 
-interface Mysterious<T> {
-  of(value: T): Mysterious<T>
-  map<U>(fn: (value: T) => U): Mysterious<U>
-  isa<U extends Mysterious<any>>(constructor: (value?: any) => U): this is U
-}
-
-interface Atomic<T> extends Mysterious<T> {
-  of(value: T): Atomic<T>
-  map<U>(fn: (value: T) => U): Mysterious<U>
-
+interface ADT<T = unknown> {
+  isa<U extends ADT>(constructor: (value?: any) => U): this is U
+  map<U>(fn: (value: T) => U): ADT<U>
   unwrap(): T
 }
 
-interface Just<T> extends Atomic<T> {
-  of: Constructors["Just"]
+interface Just<T = unknown> extends ADT<T> {
   value: T
   map<U>(fn: (value: T) => U): Just<U>
 }
 
-interface Nothing extends Atomic<never> {
-  of: Constructors["Nothing"]
-  map(fn: (value: never) => unknown): Nothing
+interface Nothing extends ADT<never> {
+  map<U>(fn: (value: never) => U): this
 }
 
-interface Failure extends Atomic<never>, Error {
-  of: Constructors["Failure"]
-  map(fn: (value: never) => unknown): Failure
+interface Failure extends ADT<never>, Error {
+  map<U>(fn: (value: never) => U): this
 }
 
 type Maybe<T> = Just<T> | Nothing
