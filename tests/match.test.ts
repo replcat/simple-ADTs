@@ -11,9 +11,6 @@ test("single values", () => {
       Just: value => Just(1),
       Nothing: () => Just(2),
     })
-    .match({
-      Just: value => 2,
-    })
 
   console.log(result)
 })
