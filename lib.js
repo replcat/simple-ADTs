@@ -42,14 +42,14 @@ const ADT = (() => {
   /** @type {PropertyDescriptorMap} */
   const common_properties = {
     isa: {
-      /** @type {ADT["isa"]} */
+      /** @type {Base["isa"]} */
       value: function(constructor) {
         constraint(typeof constructor === "function", `isa expects a constructor (got ${constructor})`)
         return this instanceof constructor
       },
     },
     map: {
-      /** @type {ADT["map"]} */
+      /** @type {Base["map"]} */
       value: function(fn) {
         constraint(typeof fn === "function", `map expects a function (got ${fn})`)
         return this.value
@@ -57,11 +57,28 @@ const ADT = (() => {
           : this
       },
     },
+
+    match: {
+      /** @type {Base["match"]} */
+      value: function(matcher) {
+        if (matcher.Just && this.isa(Just)) {
+          return matcher.Just(this.value)
+        }
+        if (matcher.Nothing && this.isa(Nothing)) {
+          return matcher.Nothing()
+        }
+        if (matcher.Failure && this.isa(Failure)) {
+          return matcher.Failure(this)
+        }
+        throw new TypeError(`No match found for ${this.name}`)
+      },
+    },
   }
 
   function Just(value) {
     constraint(value != null, "Just value should not be null or undefined")
     return Object.create(Just.prototype, {
+      name: { value: "Just", enumerable: false },
       value: { value, enumerable: true },
       ...common_properties,
     })
@@ -70,8 +87,8 @@ const ADT = (() => {
   Just.prototype.constructor = Just
 
   function Nothing() {
-    constraint(arguments.length === 0, "Nothing takes no arguments")
     return Object.create(Nothing.prototype, {
+      name: { value: "Nothing", enumerable: false },
       ...common_properties,
     })
   }
@@ -92,6 +109,7 @@ const ADT = (() => {
   Failure.prototype = Object.create(Error.prototype)
   Object.defineProperties(Failure.prototype, {
     constructor: { value: Failure },
+    name: { value: "Failure", enumerable: false },
     ...common_properties,
   })
 

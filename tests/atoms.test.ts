@@ -255,9 +255,4 @@ describe("error behaviour", () => {
     // @ts-expect-error
     expect(() => Just(null)).toThrow(TypeError)
   })
-
-  test("constructing a Nothing with a value", () => {
-    // @ts-expect-error
-    expect(() => Nothing(1)).toThrow(TypeError)
-  })
 })
