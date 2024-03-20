@@ -5,43 +5,43 @@ const constructors = (() => {
   /**
    * @template T
    * @param {T | Error} [value_or_error]
-   * @returns {globalThis.Atom<NonNullable<T>>}
+   * @returns {globalThis.Nebulous<NonNullable<T>>}
    */
-  function Atom(value_or_error) {
-    if (value_or_error == null) return Nothing()
-    if (value_or_error instanceof Error) return Failure(value_or_error)
-    return Just(value_or_error)
+  function Nebulous(value_or_error) {
+    if (value_or_error == null) return None()
+    if (value_or_error instanceof Error) return Fail(value_or_error)
+    return Some(value_or_error)
   }
 
-  Atom.prototype = Object.create(Object.prototype)
-  Atom.prototype.constructor = function() {
-    throw new TypeError("Atom cannot be directly constructed")
+  Nebulous.prototype = Object.create(Object.prototype)
+  Nebulous.prototype.constructor = function() {
+    throw new TypeError("Nebulous cannot be directly constructed")
   }
 
-  /** @type {Atom["isa"]} */
-  Atom.prototype.isa = function(constructor) {
+  /** @type {Nebulous["is"]} */
+  Nebulous.prototype.is = function(constructor) {
     // @ts-ignore
-    if (constructor.name === "Atom") return this.name === "Just" || this.name === "Nothing" || this.name === "Failure"
+    if (constructor.name === "Nebulous") return this.name === "Some" || this.name === "None" || this.name === "Fail"
     // @ts-ignore
-    if (constructor.name === "Maybe") return this.name === "Just" || this.name === "Nothing"
+    if (constructor.name === "Maybe") return this.name === "Some" || this.name === "None"
     // @ts-ignore
-    if (constructor.name === "Result") return this.name === "Just" || this.name === "Failure"
+    if (constructor.name === "Result") return this.name === "Some" || this.name === "Fail"
 
     return this instanceof constructor
   }
 
-  /** @type {Atom["map"]} */
-  Atom.prototype.map = function(fn) {
+  /** @type {Nebulous["map"]} */
+  Nebulous.prototype.map = function(fn) {
     constraint(typeof fn === "function", `map expects a function (got ${fn})`)
     return this.value
       ? this.constructor(fn(this.value))
       : this
   }
 
-  Atom.prototype.match = function(matcher) {
-    if (matcher.Just && this["isa"](Just)) return matcher.Just(this.value)
-    if (matcher.Nothing && this["isa"](Nothing)) return matcher.Nothing()
-    if (matcher.Failure && this["isa"](Failure)) return matcher.Failure(this["error"])
+  Nebulous.prototype.match = function(matcher) {
+    if (matcher.Some && this["is"](Some)) return matcher.Some(this.value)
+    if (matcher.None && this["is"](None)) return matcher.None()
+    if (matcher.Fail && this["is"](Fail)) return matcher.Fail(this["error"])
     throw new TypeError(`No match for ${this["name"] ?? "unknown type"}`)
   }
 
@@ -51,10 +51,10 @@ const constructors = (() => {
    * @returns {globalThis.Maybe<NonNullable<T>>}
    */
   function Maybe(value) {
-    return value == null ? Nothing() : Just(value)
+    return value == null ? None() : Some(value)
   }
 
-  Maybe.prototype = Atom.prototype
+  Maybe.prototype = Nebulous.prototype
   Maybe.prototype.constructor = function() {
     throw new TypeError("Maybe cannot be directly constructed")
   }
@@ -65,12 +65,12 @@ const constructors = (() => {
    * @returns {globalThis.Result<NonNullable<T>>}
    */
   function Result(value_or_error) {
-    if (value_or_error == null) return Failure("Result value was null or undefined")
-    if (value_or_error instanceof Error) return Failure(value_or_error)
-    return Just(value_or_error)
+    if (value_or_error == null) return Fail("Result value was null or undefined")
+    if (value_or_error instanceof Error) return Fail(value_or_error)
+    return Some(value_or_error)
   }
 
-  Result.prototype = Atom.prototype
+  Result.prototype = Nebulous.prototype
   Result.prototype.constructor = function() {
     throw new TypeError("Result cannot be directly constructed")
   }
@@ -78,59 +78,59 @@ const constructors = (() => {
   /**
    * @template T
    * @param {NonNullable<T>} value
-   * @returns {globalThis.Just<NonNullable<T>>}
+   * @returns {globalThis.Some<NonNullable<T>>}
    */
-  function Just(value) {
-    constraint(value != null, "Just value should not be null or undefined")
-    return Object.create(Just.prototype, {
-      name: { value: "Just" },
+  function Some(value) {
+    constraint(value != null, "Some value should not be null or undefined")
+    return Object.create(Some.prototype, {
+      name: { value: "Some" },
       value: { value, enumerable: true },
     })
   }
 
-  Just.prototype = Object.create(Atom.prototype)
-  Just.prototype.constructor = Just
+  Some.prototype = Object.create(Nebulous.prototype)
+  Some.prototype.constructor = Some
 
   /**
-   * @returns {globalThis.Nothing}
+   * @returns {globalThis.None}
    */
-  function Nothing() {
-    return Object.create(Nothing.prototype, {
-      name: { value: "Nothing" },
+  function None() {
+    return Object.create(None.prototype, {
+      name: { value: "None" },
     })
   }
 
-  Nothing.prototype = Object.create(Atom.prototype)
-  Nothing.prototype.constructor = Nothing
+  None.prototype = Object.create(Nebulous.prototype)
+  None.prototype.constructor = None
 
   /**
    * @param {string | Error} error
    * @param {unknown} [cause]
-   * @returns {globalThis.Failure}
+   * @returns {globalThis.Fail}
    */
-  function Failure(error, cause) {
+  function Fail(error, cause) {
     if (!(error instanceof Error)) {
       error = new Error(error ?? "(unspecified)")
       error.stack = trim_stack(error.stack)
     }
     if (cause) error.cause = cause
-    return Object.create(Failure.prototype, {
-      name: { value: "Failure" },
+    return Object.create(Fail.prototype, {
+      name: { value: "Fail" },
       error: { value: error, enumerable: true },
       message: { get: () => error.message, enumerable: true },
     })
   }
 
-  Failure.prototype = Object.create(Atom.prototype)
-  Failure.prototype.constructor = Failure
+  Fail.prototype = Object.create(Nebulous.prototype)
+  Fail.prototype.constructor = Fail
 
   return {
-    Atom,
+    Nebulous,
     Maybe,
     Result,
-    Just,
-    Nothing,
-    Failure,
+    Some,
+    None,
+    Fail,
   }
 })()
 

@@ -1,78 +1,78 @@
 import { describe, expect, expectTypeOf, test } from "vitest"
 
 import { constructors } from "../lib.js"
-const { Atom, Maybe, Result, Just, Nothing, Failure } = constructors
+const { Nebulous, Maybe, Result, Some, None, Fail } = constructors
 
 describe("constructors", () => {
-  test("Just", () => {
-    let just = Just(1)
+  test("Some", () => {
+    let some = Some(1)
 
-    expect(just).toBeInstanceOf(Atom)
-    expect(just).toBeInstanceOf(Just)
-    expectTypeOf(just).toMatchTypeOf<Just<number>>()
-    expect(just).toMatchObject({ value: 1 })
+    expect(some).toBeInstanceOf(Nebulous)
+    expect(some).toBeInstanceOf(Some)
+    expectTypeOf(some).toMatchTypeOf<Some<number>>()
+    expect(some).toMatchObject({ value: 1 })
   })
 
-  test("Nothing", () => {
-    let nothing = Nothing()
+  test("None", () => {
+    let none = None()
 
-    expect(nothing).toBeInstanceOf(Atom)
-    expect(nothing).toBeInstanceOf(Nothing)
-    expectTypeOf(nothing).toMatchTypeOf<Nothing>()
+    expect(none).toBeInstanceOf(Nebulous)
+    expect(none).toBeInstanceOf(None)
+    expectTypeOf(none).toMatchTypeOf<None>()
   })
 
-  test("Failure (with string message)", () => {
-    let failure = Failure("boo")
+  test("Fail (with string message)", () => {
+    let fail = Fail("boo")
 
-    expect(failure).toBeInstanceOf(Atom)
-    expect(failure).toBeInstanceOf(Failure)
-    expectTypeOf(failure).toMatchTypeOf<Failure>()
-    expect(failure.message).toBe("boo")
+    expect(fail).toBeInstanceOf(Nebulous)
+    expect(fail).toBeInstanceOf(Fail)
+    expectTypeOf(fail).toMatchTypeOf<Fail>()
+    expect(fail.message).toBe("boo")
   })
 
-  test("Failure (existing error)", () => {
+  test("Fail (existing error)", () => {
     let error = new Error("boo")
-    let failure = Failure(error)
+    let fail = Fail(error)
 
-    expect(failure).toBeInstanceOf(Failure)
-    expectTypeOf(failure).toMatchTypeOf<Failure>()
+    expect(fail).toBeInstanceOf(Fail)
+    expectTypeOf(fail).toMatchTypeOf<Fail>()
 
     expect(() => {
-      throw failure
+      throw fail
     }).toThrowErrorMatchingInlineSnapshot(`
-      Failure {
+      Fail {
         "error": [Error: boo],
         "message": "boo",
       }
     `)
   })
 
-  test("Failure (with notes)", () => {
-    let failure = Failure("boo", { mood: "pretty scary" })
+  test("Fail (with notes)", () => {
+    let fail = Fail("boo", { mood: "pretty scary" })
 
-    expect(failure).toBeInstanceOf(Failure)
-    expectTypeOf(failure).toMatchTypeOf<Failure>()
+    expect(fail).toBeInstanceOf(Fail)
+    expectTypeOf(fail).toMatchTypeOf<Fail>()
 
     expect(() => {
-      throw failure
+      throw fail
     }).toThrowErrorMatchingInlineSnapshot(`
-      Failure {
+      Fail {
         "error": [Error: boo],
         "message": "boo",
       }
     `)
   })
 
-  test("Failure (no arguments)", () => {
-    let failure = Failure()
+  test("Fail (no arguments)", () => {
+    let fail = Fail()
 
-    expect(failure).toBeInstanceOf(Failure)
-    expectTypeOf(failure).toMatchTypeOf<Failure>()
+    expect(fail).toBeInstanceOf(Fail)
+    expectTypeOf(fail).toMatchTypeOf<Fail>()
 
     expect(() => {
-      throw failure
+      throw fail
     }).toThrowErrorMatchingInlineSnapshot(`
-      Failure {
+      Fail {
         "error": [Error: (unspecified)],
         "message": "(unspecified)",
       }
@@ -82,51 +82,51 @@ describe("constructors", () => {
 
 describe("map", () => {
   describe("with a type-preserving function", () => {
-    test("Just", () => {
-      let just = Just(1)
-      let result = just.map(value => value + 1)
-      expect(result).toBeInstanceOf(Just)
-      expectTypeOf(result).toMatchTypeOf<Just<number>>()
+    test("Some", () => {
+      let some = Some(1)
+      let result = some.map(value => value + 1)
+      expect(result).toBeInstanceOf(Some)
+      expectTypeOf(result).toMatchTypeOf<Some<number>>()
       expect(result.value).toBe(2)
     })
 
-    test("Nothing", () => {
-      let nothing = Nothing()
-      let result = nothing.map(value => value + 1)
-      expect(result).toBeInstanceOf(Nothing)
-      expectTypeOf(result).toMatchTypeOf<Nothing>()
+    test("None", () => {
+      let none = None()
+      let result = none.map(value => value + 1)
+      expect(result).toBeInstanceOf(None)
+      expectTypeOf(result).toMatchTypeOf<None>()
     })
 
-    test("Failure", () => {
-      let failure = Failure("error")
-      let result = failure.map(value => value + 1)
-      expect(result).toBeInstanceOf(Failure)
-      expectTypeOf(result).toMatchTypeOf<Failure>()
+    test("Fail", () => {
+      let fail = Fail("error")
+      let result = fail.map(value => value + 1)
+      expect(result).toBeInstanceOf(Fail)
+      expectTypeOf(result).toMatchTypeOf<Fail>()
     })
   })
 
   describe("with a type-modifying function", () => {
-    test("Just", () => {
-      let just = Just(1)
-      let result = just.map(value => String(value))
-      expect(result).toBeInstanceOf(Just)
-      expectTypeOf(result).toMatchTypeOf<Just<string>>()
+    test("Some", () => {
+      let some = Some(1)
+      let result = some.map(value => String(value))
+      expect(result).toBeInstanceOf(Some)
+      expectTypeOf(result).toMatchTypeOf<Some<string>>()
       expect(result.value).toBe("1")
     })
 
-    test("Nothing", () => {
-      let nothing = Nothing()
-      let result = nothing.map(value => String(value))
-      expect(result).toBeInstanceOf(Nothing)
-      expectTypeOf(result).toMatchTypeOf<Nothing>()
+    test("None", () => {
+      let none = None()
+      let result = none.map(value => String(value))
+      expect(result).toBeInstanceOf(None)
+      expectTypeOf(result).toMatchTypeOf<None>()
     })
 
-    test("Failure", () => {
-      let failure = Failure("some error")
-      let result = failure.map(value => String(value))
-      expect(result).toBeInstanceOf(Failure)
+    test("Fail", () => {
+      let fail = Fail("some error")
+      let result = fail.map(value => String(value))
+      expect(result).toBeInstanceOf(Fail)
       expect(result.message).toBe("some error")
-      expectTypeOf(result).toMatchTypeOf<Failure>()
+      expectTypeOf(result).toMatchTypeOf<Fail>()
     })
   })
 })
@@ -134,137 +134,137 @@ describe("map", () => {
 describe("narrowing", () => {
   describe("EDGE CASES WHICH DO NOT WORK", () => {
     test("arrays of true unions", () => {
-      let as_union = [Just(1 + 0), Nothing(), Just(2 + 0)]
+      let as_union = [Some(1 + 0), None(), Some(2 + 0)]
       let first_of_union = as_union[0]
-      if (first_of_union.isa(Just)) {
-        expectTypeOf(first_of_union).toMatchTypeOf<Just<number>>()
+      if (first_of_union.is(Some)) {
+        expectTypeOf(first_of_union).toMatchTypeOf<Some<number>>()
       }
 
       let as_maybe: Maybe<number>[] = as_union
       let first_of_maybe = as_maybe[0]
-      if (first_of_maybe.isa(Just)) {
-        expectTypeOf(first_of_maybe).toMatchTypeOf<Just<number>>()
+      if (first_of_maybe.is(Some)) {
+        expectTypeOf(first_of_maybe).toMatchTypeOf<Some<number>>()
       }
     })
   })
 
-  test("Atom to Atom", () => {
-    let atom = Atom(1)
-    if (atom.isa(Atom)) {
-      expectTypeOf(atom).toMatchTypeOf<Atom<number>>()
-      expect(atom).toBeInstanceOf(Just)
+  test("Nebulous to Nebulous", () => {
+    let nebulous = Nebulous(1)
+    if (nebulous.is(Nebulous)) {
+      expectTypeOf(nebulous).toMatchTypeOf<Nebulous<number>>()
+      expect(nebulous).toBeInstanceOf(Some)
     } else {
       expect.unreachable()
     }
   })
 
-  test("Atom to Maybe", () => {
-    let atom = Atom(1)
-    if (atom.isa(Maybe)) {
-      expectTypeOf(atom).toMatchTypeOf<Maybe<number>>()
-      expect(atom).toBeInstanceOf(Just)
+  test("Nebulous to Maybe", () => {
+    let nebulous = Nebulous(1)
+    if (nebulous.is(Maybe)) {
+      expectTypeOf(nebulous).toMatchTypeOf<Maybe<number>>()
+      expect(nebulous).toBeInstanceOf(Some)
     } else {
       expect.unreachable()
     }
   })
 
-  test("Atom to Result", () => {
-    let atom = Atom(1)
-    if (atom.isa(Result)) {
-      expectTypeOf(atom).toMatchTypeOf<Result<number>>()
-      expect(atom).toBeInstanceOf(Just)
+  test("Nebulous to Result", () => {
+    let nebulous = Nebulous(1)
+    if (nebulous.is(Result)) {
+      expectTypeOf(nebulous).toMatchTypeOf<Result<number>>()
+      expect(nebulous).toBeInstanceOf(Some)
     } else {
       expect.unreachable()
     }
   })
 
-  test("Atom to Just", () => {
-    let atom = Atom(1)
-    if (atom.isa(Just)) {
-      expectTypeOf(atom).toMatchTypeOf<Just<number>>()
-      expect(atom).toBeInstanceOf(Just)
+  test("Nebulous to Some", () => {
+    let nebulous = Nebulous(1)
+    if (nebulous.is(Some)) {
+      expectTypeOf(nebulous).toMatchTypeOf<Some<number>>()
+      expect(nebulous).toBeInstanceOf(Some)
     } else {
       expect.unreachable()
     }
   })
 
-  test("Atom to Nothing", () => {
-    let atom = Atom(undefined)
-    if (atom.isa(Nothing)) {
-      expectTypeOf(atom).toMatchTypeOf<Nothing>()
-      expect(atom).toBeInstanceOf(Nothing)
+  test("Nebulous to None", () => {
+    let nebulous = Nebulous(undefined)
+    if (nebulous.is(None)) {
+      expectTypeOf(nebulous).toMatchTypeOf<None>()
+      expect(nebulous).toBeInstanceOf(None)
     } else {
       expect.unreachable()
     }
   })
 
-  test("Maybe to Just", () => {
+  test("Maybe to Some", () => {
     let maybe = Maybe(1)
-    if (maybe.isa(Just)) {
-      expectTypeOf(maybe).toMatchTypeOf<Just<number>>()
+    if (maybe.is(Some)) {
+      expectTypeOf(maybe).toMatchTypeOf<Some<number>>()
     } else {
       expect.unreachable()
     }
   })
 
-  test("Maybe to Nothing", () => {
-    let maybe: Maybe<number> = Nothing()
-    if (maybe.isa(Nothing)) {
-      expectTypeOf(maybe).toMatchTypeOf<Nothing>()
+  test("Maybe to None", () => {
+    let maybe: Maybe<number> = None()
+    if (maybe.is(None)) {
+      expectTypeOf(maybe).toMatchTypeOf<None>()
     } else {
       expect.unreachable()
     }
   })
 
-  test("Result to Just", () => {
-    let result: Result<number> = Just(1)
-    if (result.isa(Just)) {
-      expectTypeOf(result).toMatchTypeOf<Just<number>>()
+  test("Result to Some", () => {
+    let result: Result<number> = Some(1)
+    if (result.is(Some)) {
+      expectTypeOf(result).toMatchTypeOf<Some<number>>()
     } else {
       expect.unreachable()
     }
   })
 
-  test("Result to Failure", () => {
-    let result: Result<number> = Failure()
-    if (result.isa(Failure)) {
-      expectTypeOf(result).toMatchTypeOf<Failure>()
+  test("Result to Fail", () => {
+    let result: Result<number> = Fail()
+    if (result.is(Fail)) {
+      expectTypeOf(result).toMatchTypeOf<Fail>()
     } else {
       expect.unreachable()
     }
   })
 
-  test("Maybe to Just", () => {
-    let maybe: Maybe<number> = Just(1)
-    if (maybe.isa(Just)) {
-      expectTypeOf(maybe).toMatchTypeOf<Just<number>>()
+  test("Maybe to Some", () => {
+    let maybe: Maybe<number> = Some(1)
+    if (maybe.is(Some)) {
+      expectTypeOf(maybe).toMatchTypeOf<Some<number>>()
     } else {
       expect.unreachable()
     }
   })
 
-  test("Maybe to Nothing", () => {
-    let maybe: Maybe<number> = Nothing()
-    if (maybe.isa(Nothing)) {
-      expectTypeOf(maybe).toMatchTypeOf<Nothing>()
+  test("Maybe to None", () => {
+    let maybe: Maybe<number> = None()
+    if (maybe.is(None)) {
+      expectTypeOf(maybe).toMatchTypeOf<None>()
     } else {
       expect.unreachable()
     }
   })
 
-  test("Result to Just", () => {
-    let result: Result<number> = Just(1)
-    if (result.isa(Just)) {
-      expectTypeOf(result).toMatchTypeOf<Just<number>>()
+  test("Result to Some", () => {
+    let result: Result<number> = Some(1)
+    if (result.is(Some)) {
+      expectTypeOf(result).toMatchTypeOf<Some<number>>()
     } else {
       expect.unreachable()
     }
   })
 
-  test("Result to Failure", () => {
-    let result: Result<number> = Failure()
-    if (result.isa(Failure)) {
-      expectTypeOf(result).toMatchTypeOf<Failure>()
+  test("Result to Fail", () => {
+    let result: Result<number> = Fail()
+    if (result.is(Fail)) {
+      expectTypeOf(result).toMatchTypeOf<Fail>()
     } else {
       expect.unreachable()
     }
@@ -272,7 +272,7 @@ describe("narrowing", () => {
 })
 
 describe("Maybe", () => {
-  let array: Maybe<number>[] = [Just(1), Nothing(), Just(2)]
+  let array: Maybe<number>[] = [Some(1), None(), Some(2)]
 
   test("has the expected type", () => {
     expectTypeOf(array).toMatchTypeOf<Array<Maybe<number>>>()
@@ -281,20 +281,20 @@ describe("Maybe", () => {
   test("can be mapped (type-preserving)", () => {
     let add_one = (value: number) => value + 1
     let result = array.map(value => value.map(add_one))
-    expect(result).toMatchObject([Just(2), Nothing(), Just(3)])
+    expect(result).toMatchObject([Some(2), None(), Some(3)])
     expectTypeOf(result).toMatchTypeOf<Array<Maybe<number>>>()
   })
 
   test("can be mapped (type-modifying)", () => {
     let stringify = (value: number) => String(value)
     let result = array.map(value => value.map(stringify))
-    expect(result).toMatchObject([Just("1"), Nothing(), Just("2")])
+    expect(result).toMatchObject([Some("1"), None(), Some("2")])
     expectTypeOf(result).toMatchTypeOf<Array<Maybe<string>>>()
   })
 })
 
 describe("Result", () => {
-  let array: Result<number>[] = [Just(1), Failure(), Just(2)]
+  let array: Result<number>[] = [Some(1), Fail(), Some(2)]
 
   test("has the expected type", () => {
     expectTypeOf(array).toMatchTypeOf<Array<Result<number>>>()
@@ -303,23 +303,23 @@ describe("Result", () => {
   test("can be mapped (type-preserving)", () => {
     let add_one = (value: number) => value + 1
     let result = array.map(value => value.map(add_one))
-    expect(result).toMatchObject([Just(2), Failure(), Just(3)])
+    expect(result).toMatchObject([Some(2), Fail(), Some(3)])
     expectTypeOf(result).toMatchTypeOf<Array<Result<number>>>()
   })
 
   test("can be mapped (type-modifying)", () => {
     let stringify = (value: number) => String(value)
     let result = array.map(value => value.map(stringify))
-    expect(result).toMatchObject([Just("1"), Failure(), Just("2")])
+    expect(result).toMatchObject([Some("1"), Fail(), Some("2")])
     expectTypeOf(result).toMatchTypeOf<Array<Result<string>>>()
   })
 })
 
 describe("error behaviour", () => {
-  test("constructing a Just of null or undefined", () => {
+  test("constructing a Some of null or undefined", () => {
     // @ts-expect-error
-    expect(() => Just(undefined)).toThrow(TypeError)
+    expect(() => Some(undefined)).toThrow(TypeError)
     // @ts-expect-error
-    expect(() => Just(null)).toThrow(TypeError)
+    expect(() => Some(null)).toThrow(TypeError)
   })
 })

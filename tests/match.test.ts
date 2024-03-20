@@ -1,113 +1,113 @@
 import { describe, expect, expectTypeOf, test } from "vitest"
 
 import { constructors } from "../lib.js"
-const { Atom, Maybe, Result, Just, Nothing, Failure } = constructors
+const { Nebulous, Maybe, Result, Some, None, Fail } = constructors
 
 test("piping directly to type constructors", () => {
-  let atoms: Atom<number>[] = [Just(1), Nothing(), Failure()]
-  let result = atoms.map(atom =>
-    atom.match({
-      Just,
-      Nothing,
-      Failure: Nothing,
+  let nebulous: Nebulous<number>[] = [Some(1), None(), Fail()]
+  let result = nebulous.map(item =>
+    item.match({
+      Some,
+      None,
+      Fail: None,
     })
   )
 
-  expect(result).toEqual([Just(1), Nothing(), Nothing()])
+  expect(result).toEqual([Some(1), None(), None()])
   expectTypeOf(result).toEqualTypeOf<Maybe<number>[]>()
 })
 
-test("matching unknown atoms", () => {
-  let atoms: Atom<number>[] = [Just(1), Nothing(), Failure()]
+test("matching unknown nebulouss", () => {
+  let nebulous: Nebulous<number>[] = [Some(1), None(), Fail()]
 
-  let result = atoms.map(atom =>
-    atom.match({
-      Just: value => {
+  let result = nebulous.map(item =>
+    item.match({
+      Some: value => {
         expect(value).toBe(1)
         expectTypeOf(value).toEqualTypeOf<number>()
-        return Just(value)
+        return Some(value)
       },
 
-      Nothing: function() {
+      None: function() {
         expect(arguments.length).toBe(0)
-        return Just(0)
+        return Some(0)
       },
 
-      Failure: error => {
+      Fail: error => {
         expect(error).toBeInstanceOf(Error)
         expect(error.message).toBe("(unspecified)")
         expectTypeOf(error).toEqualTypeOf<Error>()
-        return Just(0)
+        return Some(0)
       },
     })
   )
 
-  expectTypeOf(result).toEqualTypeOf<Just<number>[]>()
-  expect(result).toEqual([Just(1), Just(0), Just(0)])
+  expectTypeOf(result).toEqualTypeOf<Some<number>[]>()
+  expect(result).toEqual([Some(1), Some(0), Some(0)])
   expect.assertions(5)
 })
 
 test("matching maybes", () => {
   // unfortunately requires an explicit type annotation
-  let numbers: Maybe<number>[] = [Just(1), Nothing(), Just(2)]
+  let numbers: Maybe<number>[] = [Some(1), None(), Some(2)]
 
   let result = numbers.map(maybe =>
     maybe.match({
-      Just: _ => Nothing(),
-      Nothing: () => Just(0),
+      Some: _ => None(),
+      None: () => Some(0),
     })
   )
 
-  expect(result).toEqual([Nothing(), Just(0), Nothing()])
+  expect(result).toEqual([None(), Some(0), None()])
   expectTypeOf(result).toEqualTypeOf<Maybe<0>[]>()
 })
 
 test("matching results", () => {
-  let numbers: Result<number>[] = [Just(1), Failure(), Just(2)]
+  let numbers: Result<number>[] = [Some(1), Fail(), Some(2)]
 
   let result = numbers.map(maybe =>
     maybe.match({
-      Just: _ => Nothing(),
-      Failure: () => Just(0),
+      Some: value => None(),
+      Fail: error => Some(0),
     })
   )
 
-  expect(result).toEqual([Nothing(), Just(0), Nothing()])
+  expect(result).toEqual([None(), Some(0), None()])
   expectTypeOf(result).toEqualTypeOf<Maybe<0>[]>()
 })
 
 test("matching maybes", () => {
   // unfortunately requires an explicit type annotation here
-  let maybe_numbers: Maybe<number>[] = [Just(1), Nothing(), Just(2)]
+  let maybe_numbers: Maybe<number>[] = [Some(1), None(), Some(2)]
 
   let switcheroo = maybe_numbers.map(maybe =>
     maybe.match({
-      Just: value => Nothing(),
-      Nothing: () => Just(0),
+      Some: value => None(),
+      None: () => Some(0),
     })
   )
 
-  expect(switcheroo).toEqual([Nothing(), Just(0), Nothing()])
+  expect(switcheroo).toEqual([None(), Some(0), None()])
 
-  for (let atom of switcheroo) {
-    if (atom.isa(Just)) {
-      expectTypeOf(atom).toMatchTypeOf<Just<0>>()
+  for (let nebulous of switcheroo) {
+    if (nebulous.is(Some)) {
+      expectTypeOf(nebulous).toMatchTypeOf<Some<0>>()
     }
   }
 })
 
 describe("errors", () => {
   test("missing match case (type error and throws)", () => {
-    let just = Just(1)
+    let some = Some(1)
 
     // @ts-expect-error
-    expect(() => just.match({})).toThrow(TypeError)
+    expect(() => some.match({})).toThrow(TypeError)
   })
 
   test("unexpected match case (type error only)", () => {
-    let just: Maybe<number>[] = []
+    let maybe: Maybe<number>[] = []
 
     // @ts-expect-error
-    just.map(atom => atom.match({ Failure: () => {} }))
+    maybe.map(m => m.match({ Fail: () => {} }))
   })
 })
