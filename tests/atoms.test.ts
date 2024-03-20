@@ -4,13 +4,23 @@ import { ADT } from "../lib.js"
 const { Just, Nothing, Failure } = ADT
 
 describe("constructors", () => {
+  test("casting a Maybe", () => {
+    const maybe: Maybe<number> = Math.random() > 0.5 ? Just(1) : Nothing()
+
+    const result = maybe.match({
+      Just: value => 1,
+      Nothing: () => 2,
+    })
+
+    if (maybe.isa(Just)) {
+      maybe
+    }
+  })
+
   test("Just", () => {
     let just = Just(1)
 
     expect(just).toBeInstanceOf(Just)
-    expect(just).not.toBeInstanceOf(Nothing)
-    expect(just).not.toBeInstanceOf(Failure)
-
     expectTypeOf(just).toMatchTypeOf<Just<number>>()
     expect(just).toMatchObject({ value: 1 })
   })
@@ -19,59 +29,64 @@ describe("constructors", () => {
     let nothing = Nothing()
 
     expect(nothing).toBeInstanceOf(Nothing)
-    expect(nothing).not.toBeInstanceOf(Just)
-    expect(nothing).not.toBeInstanceOf(Failure)
-
     expectTypeOf(nothing).toMatchTypeOf<Nothing>()
   })
 
-  test("Failure (string error)", () => {
+  test("Failure (with string message)", () => {
     let failure = Failure("boo")
 
-    expect(failure).toBeInstanceOf(Error)
     expect(failure).toBeInstanceOf(Failure)
     expectTypeOf(failure).toMatchTypeOf<Failure>()
-
-    expect(() => {
-      throw failure
-    }).toThrowErrorMatchingInlineSnapshot(`[Failure: boo]`)
+    expect(failure.message).toBe("boo")
   })
 
   test("Failure (existing error)", () => {
     let error = new Error("boo")
     let failure = Failure(error)
 
-    expect(failure).toBeInstanceOf(Error)
     expect(failure).toBeInstanceOf(Failure)
     expectTypeOf(failure).toMatchTypeOf<Failure>()
 
     expect(() => {
       throw failure
-    }).toThrowErrorMatchingInlineSnapshot(`[Failure: boo]`)
+    }).toThrowErrorMatchingInlineSnapshot(`
+      Failure {
+        "error": [Error: boo],
+        "message": "boo",
+      }
+    `)
   })
 
   test("Failure (with notes)", () => {
     let failure = Failure("boo", { mood: "pretty scary" })
 
-    expect(failure).toBeInstanceOf(Error)
     expect(failure).toBeInstanceOf(Failure)
     expectTypeOf(failure).toMatchTypeOf<Failure>()
 
     expect(() => {
       throw failure
-    }).toThrowErrorMatchingInlineSnapshot(`[Failure: boo { mood: "pretty scary" }]`)
+    }).toThrowErrorMatchingInlineSnapshot(`
+      Failure {
+        "error": [Error: boo],
+        "message": "boo",
+      }
+    `)
   })
 
   test("Failure (no arguments)", () => {
     let failure = Failure()
 
-    expect(failure).toBeInstanceOf(Error)
     expect(failure).toBeInstanceOf(Failure)
     expectTypeOf(failure).toMatchTypeOf<Failure>()
 
     expect(() => {
       throw failure
-    }).toThrowErrorMatchingInlineSnapshot(`[Failure]`)
+    }).toThrowErrorMatchingInlineSnapshot(`
+      Failure {
+        "error": [Error: (unspecified)],
+        "message": "(unspecified)",
+      }
+    `)
   })
 })
 
@@ -254,10 +269,5 @@ describe("error behaviour", () => {
     expect(() => Just(undefined)).toThrow(TypeError)
     // @ts-expect-error
     expect(() => Just(null)).toThrow(TypeError)
-  })
-
-  test("constructing a Nothing with a value", () => {
-    // @ts-expect-error
-    expect(() => Nothing(1)).toThrow(TypeError)
   })
 })

@@ -14,6 +14,6 @@
     "target": "es2022",
     "typeRoots": ["./types"]
   },
-  "include": ["./*.js", "./types/**/*.d.ts", "./tests/**/*.ts"],
+  "include": ["./*.js", "./types/**/*.d.ts", "./tests/**/*"],
   "exclude": ["node_modules"]
 }
