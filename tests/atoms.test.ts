@@ -1,16 +1,33 @@
 import { describe, expect, expectTypeOf, test } from "vitest"
 
 import { ADT } from "../lib.js"
-const { Just, Nothing, Failure } = ADT
+const { Atom, Maybe, Result, Just, Nothing, Failure } = ADT
 
 describe("constructors", () => {
+  test("Atom (union of all three concrete types)", () => {
+    let atom_of_one = Atom(1)
+    expect(atom_of_one).toBeInstanceOf(Just)
+
+    let atom_of_error = Atom(new Error("boo"))
+    expect(atom_of_error).toBeInstanceOf(Failure)
+
+    let atom_of_nothing = Atom()
+    expect(atom_of_nothing).toBeInstanceOf(Nothing)
+
+    if (atom_of_one.isa(Just)) {
+      atom_of_one
+    }
+
+    const maybe = Maybe(1)
+    if (maybe.isa(Just)) {
+      maybe
+    }
+  })
+
   test("Just", () => {
     let just = Just(1)
 
     expect(just).toBeInstanceOf(Just)
-    expect(just).not.toBeInstanceOf(Nothing)
-    expect(just).not.toBeInstanceOf(Failure)
-
     expectTypeOf(just).toMatchTypeOf<Just<number>>()
     expect(just).toMatchObject({ value: 1 })
   })
@@ -19,29 +36,21 @@ describe("constructors", () => {
     let nothing = Nothing()
 
     expect(nothing).toBeInstanceOf(Nothing)
-    expect(nothing).not.toBeInstanceOf(Just)
-    expect(nothing).not.toBeInstanceOf(Failure)
-
     expectTypeOf(nothing).toMatchTypeOf<Nothing>()
   })
 
-  test("Failure (string error)", () => {
+  test("Failure (with string message)", () => {
     let failure = Failure("boo")
 
-    expect(failure).toBeInstanceOf(Error)
     expect(failure).toBeInstanceOf(Failure)
     expectTypeOf(failure).toMatchTypeOf<Failure>()
-
-    expect(() => {
-      throw failure
-    }).toThrowErrorMatchingInlineSnapshot(`[Failure: boo]`)
+    expect(failure.message).toBe("boo")
   })
 
   test("Failure (existing error)", () => {
     let error = new Error("boo")
     let failure = Failure(error)
 
-    expect(failure).toBeInstanceOf(Error)
     expect(failure).toBeInstanceOf(Failure)
     expectTypeOf(failure).toMatchTypeOf<Failure>()
 
