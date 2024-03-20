@@ -1,12 +1,13 @@
 import { describe, expect, expectTypeOf, test } from "vitest"
 
-import { ADT } from "../lib.js"
-const { Atom, Maybe, Result, Just, Nothing, Failure } = ADT
+import { constructors } from "../lib.js"
+const { Atom, Maybe, Result, Just, Nothing, Failure } = constructors
 
 describe("constructors", () => {
   test("Just", () => {
     let just = Just(1)
 
+    expect(just).toBeInstanceOf(Atom)
     expect(just).toBeInstanceOf(Just)
     expectTypeOf(just).toMatchTypeOf<Just<number>>()
     expect(just).toMatchObject({ value: 1 })
@@ -15,6 +16,7 @@ describe("constructors", () => {
   test("Nothing", () => {
     let nothing = Nothing()
 
+    expect(nothing).toBeInstanceOf(Atom)
     expect(nothing).toBeInstanceOf(Nothing)
     expectTypeOf(nothing).toMatchTypeOf<Nothing>()
   })
@@ -22,6 +24,7 @@ describe("constructors", () => {
   test("Failure (with string message)", () => {
     let failure = Failure("boo")
 
+    expect(failure).toBeInstanceOf(Atom)
     expect(failure).toBeInstanceOf(Failure)
     expectTypeOf(failure).toMatchTypeOf<Failure>()
     expect(failure.message).toBe("boo")

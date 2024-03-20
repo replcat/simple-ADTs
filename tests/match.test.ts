@@ -1,7 +1,7 @@
 import { describe, expect, expectTypeOf, test } from "vitest"
 
-import { ADT } from "../lib.js"
-const { Atom, Maybe, Result, Just, Nothing, Failure } = ADT
+import { constructors } from "../lib.js"
+const { Atom, Maybe, Result, Just, Nothing, Failure } = constructors
 
 test("piping directly to type constructors", () => {
   let atoms: Atom<number>[] = [Just(1), Nothing(), Failure()]
