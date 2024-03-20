@@ -1,10 +1,10 @@
 type Constructors = {
-  Nebulous: <T>(value_or_error?: T) => Nebulous<T extends Error ? never : T>
-  Maybe: <T>(value?: T) => Maybe<T>
-  Result: <T>(value_or_error?: T) => Result<T extends Error ? never : T>
+  Nebulous: <T>(value: T) => Nebulous<NonNullable<T>>
+  Maybe: <T>(value?: T) => Maybe<NonNullable<T>>
+  Result: <T>(value?: T, on_null?: string | Error) => Result<NonNullable<T>>
   Some: <T>(value: NonNullable<T>) => Some<NonNullable<T>>
   None: () => None
-  Fail: (message_or_error?: string | Error, cause?: unknown) => Fail
+  Fail: (error?: string | Error, cause?: unknown) => Fail
 }
 
 interface Nebulous<T = unknown> {
@@ -16,7 +16,7 @@ interface Nebulous<T = unknown> {
     : U extends Result ? Result<T>
     : Nebulous<T> // :3
   unwrap(): T
-  map<U>(fn: (value: T) => U): Nebulous<U>
+  map<U>(fn: (value: T) => NonNullable<U>): Nebulous<NonNullable<U>>
   match<JOut, NOut, FOut>(matcher: {
     Some: (value: T) => JOut
     None: () => NOut
@@ -26,7 +26,7 @@ interface Nebulous<T = unknown> {
 
 interface Maybe<T = unknown> extends Nebulous<T> {
   name: "Some" | "None"
-  map<U>(fn: (value: T) => U): Maybe<U>
+  map<U>(fn: (value: T) => NonNullable<U>): Maybe<NonNullable<U>>
   match<JOut, NOut>(matcher: {
     Some: (value: T) => JOut
     None: () => NOut
@@ -35,7 +35,7 @@ interface Maybe<T = unknown> extends Nebulous<T> {
 
 interface Result<T = unknown> extends Nebulous<T> {
   name: "Some" | "Fail"
-  map<U>(fn: (value: T) => U): Result<U>
+  map<U>(fn: (value: T) => NonNullable<U>): Result<NonNullable<U>>
   match<JOut, FOut>(matcher: {
     Some: (value: T) => JOut
     Fail: (error: Error) => FOut
@@ -45,7 +45,7 @@ interface Result<T = unknown> extends Nebulous<T> {
 interface Some<T = unknown> extends Nebulous<T> {
   name: "Some"
   value: NonNullable<T>
-  map<U>(fn: (value: T) => U): Some<U>
+  map<U>(fn: (value: T) => NonNullable<U>): Some<NonNullable<U>>
   match<JOut>(matcher: {
     Some: (value: T) => JOut
   }): Consolidate<JOut>

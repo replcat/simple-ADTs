@@ -4,45 +4,46 @@ const constructors = (() => {
 
   /**
    * @template T
-   * @param {T | Error} [value_or_error]
+   * @param {T} value
    * @returns {globalThis.Nebulous<NonNullable<T>>}
    */
-  function Nebulous(value_or_error) {
-    if (value_or_error == null) return None()
-    if (value_or_error instanceof Error) return Fail(value_or_error)
-    return Some(value_or_error)
+  function Nebulous(value) {
+    return Some(value)
   }
 
   Nebulous.prototype = Object.create(Object.prototype)
   Nebulous.prototype.constructor = function() {
-    throw new TypeError("Nebulous cannot be directly constructed")
+    throw new TypeError(`${Nebulous.name} cannot be directly constructed`)
   }
 
   /** @type {Nebulous["is"]} */
   Nebulous.prototype.is = function(constructor) {
-    // @ts-ignore
+    assert(typeof constructor === "function", `expected a constructor (got ${constructor})`)
     if (constructor.name === "Nebulous") return this.name === "Some" || this.name === "None" || this.name === "Fail"
-    // @ts-ignore
     if (constructor.name === "Maybe") return this.name === "Some" || this.name === "None"
-    // @ts-ignore
     if (constructor.name === "Result") return this.name === "Some" || this.name === "Fail"
-
     return this instanceof constructor
   }
 
-  /** @type {Nebulous["map"]} */
+  /** @type {globalThis.Nebulous["map"]} */
   Nebulous.prototype.map = function(fn) {
-    constraint(typeof fn === "function", `map expects a function (got ${fn})`)
+    assert(typeof fn === "function", `map expects a function (got ${fn})`)
     return this.value
       ? this.constructor(fn(this.value))
       : this
   }
 
   Nebulous.prototype.match = function(matcher) {
-    if (matcher.Some && this["is"](Some)) return matcher.Some(this.value)
-    if (matcher.None && this["is"](None)) return matcher.None()
-    if (matcher.Fail && this["is"](Fail)) return matcher.Fail(this["error"])
+    if (typeof matcher.Some === "function" && this["is"](Some)) return matcher.Some(this.value)
+    if (typeof matcher.None === "function" && this["is"](None)) return matcher.None()
+    if (typeof matcher.Fail === "function" && this["is"](Fail)) return matcher.Fail(this["error"])
     throw new TypeError(`No match for ${this["name"] ?? "unknown type"}`)
+  }
+
+  /** @type {globalThis.Nebulous["unwrap"]} */
+  Nebulous.prototype.unwrap = function() {
+    if ("value" in this) return this.value
+    throw new TypeError(`Unwrapped an empty ${this.name}`)
   }
 
   /**
@@ -56,23 +57,23 @@ const constructors = (() => {
 
   Maybe.prototype = Nebulous.prototype
   Maybe.prototype.constructor = function() {
-    throw new TypeError("Maybe cannot be directly constructed")
+    throw new TypeError(`${Maybe.name} cannot be directly constructed`)
   }
 
   /**
    * @template T
-   * @param {T | Error} value_or_error
+   * @param {T} value
+   * @param {string | Error} [on_null]
    * @returns {globalThis.Result<NonNullable<T>>}
    */
-  function Result(value_or_error) {
-    if (value_or_error == null) return Fail("Result value was null or undefined")
-    if (value_or_error instanceof Error) return Fail(value_or_error)
-    return Some(value_or_error)
+  function Result(value, on_null) {
+    if (value == null) return Fail(on_null)
+    return Some(value)
   }
 
   Result.prototype = Nebulous.prototype
   Result.prototype.constructor = function() {
-    throw new TypeError("Result cannot be directly constructed")
+    throw new TypeError(`${Result.name} cannot be directly constructed`)
   }
 
   /**
@@ -81,7 +82,7 @@ const constructors = (() => {
    * @returns {globalThis.Some<NonNullable<T>>}
    */
   function Some(value) {
-    constraint(value != null, "Some value should not be null or undefined")
+    assert(value != null, `${Some.name}.value cannot be null or undefined.`)
     return Object.create(Some.prototype, {
       name: { value: "Some" },
       value: { value, enumerable: true },
@@ -148,9 +149,9 @@ function trim_stack(stack) {
  * @param {string} message
  * @return {asserts condition}
  */
-function constraint(condition, message) {
+function assert(condition, message) {
   if (!condition) {
-    const error = new TypeError(`Constraint was violated: ${message}`)
+    const error = new TypeError(`Invariant violation: ${message}`)
     error.stack = trim_stack(error.stack)
     throw error
   }
