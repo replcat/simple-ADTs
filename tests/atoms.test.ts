@@ -1,22 +1,9 @@
 import { describe, expect, expectTypeOf, test } from "vitest"
 
 import { ADT } from "../lib.js"
-const { Just, Nothing, Failure } = ADT
+const { Atom, Maybe, Result, Just, Nothing, Failure } = ADT
 
 describe("constructors", () => {
-  test("casting a Maybe", () => {
-    const maybe: Maybe<number> = Math.random() > 0.5 ? Just(1) : Nothing()
-
-    const result = maybe.match({
-      Just: value => 1,
-      Nothing: () => 2,
-    })
-
-    if (maybe.isa(Just)) {
-      maybe
-    }
-  })
-
   test("Just", () => {
     let just = Just(1)
 
@@ -142,80 +129,142 @@ describe("map", () => {
 })
 
 describe("narrowing", () => {
-  describe("with instanceof", () => {
-    test("Maybe to Just", () => {
-      let maybe: Maybe<number> = Just(1)
-      if (maybe instanceof Just) {
-        expectTypeOf(maybe).toMatchTypeOf<Just<number>>()
-      } else {
-        expect.unreachable()
+  describe("EDGE CASES WHICH DO NOT WORK", () => {
+    test("arrays of true unions", () => {
+      let as_union = [Just(1 + 0), Nothing(), Just(2 + 0)]
+      let first_of_union = as_union[0]
+      if (first_of_union.isa(Just)) {
+        expectTypeOf(first_of_union).toMatchTypeOf<Just<number>>()
       }
-    })
 
-    test("Maybe to Nothing", () => {
-      let maybe: Maybe<number> = Nothing()
-      if (maybe instanceof Nothing) {
-        expectTypeOf(maybe).toMatchTypeOf<Nothing>()
-      } else {
-        expect.unreachable()
-      }
-    })
-
-    test("Result to Just", () => {
-      let result: Result<number> = Just(1)
-      if (result instanceof Just) {
-        expectTypeOf(result).toMatchTypeOf<Just<number>>()
-      } else {
-        expect.unreachable()
-      }
-    })
-
-    test("Result to Failure", () => {
-      let result: Result<number> = Failure()
-      if (result instanceof Failure) {
-        expectTypeOf(result).toMatchTypeOf<Failure>()
-      } else {
-        expect.unreachable()
+      let as_maybe: Maybe<number>[] = as_union
+      let first_of_maybe = as_maybe[0]
+      if (first_of_maybe.isa(Just)) {
+        expectTypeOf(first_of_maybe).toMatchTypeOf<Just<number>>()
       }
     })
   })
 
-  describe("with isa", () => {
-    test("Maybe to Just", () => {
-      let maybe: Maybe<number> = Just(1)
-      if (maybe.isa(Just)) {
-        expectTypeOf(maybe).toMatchTypeOf<Just<number>>()
-      } else {
-        expect.unreachable()
-      }
-    })
+  test("Atom to Atom", () => {
+    let atom = Atom(1)
+    if (atom.isa(Atom)) {
+      expectTypeOf(atom).toMatchTypeOf<Atom<number>>()
+      expect(atom).toBeInstanceOf(Just)
+    } else {
+      expect.unreachable()
+    }
+  })
 
-    test("Maybe to Nothing", () => {
-      let maybe: Maybe<number> = Nothing()
-      if (maybe.isa(Nothing)) {
-        expectTypeOf(maybe).toMatchTypeOf<Nothing>()
-      } else {
-        expect.unreachable()
-      }
-    })
+  test("Atom to Maybe", () => {
+    let atom = Atom(1)
+    if (atom.isa(Maybe)) {
+      expectTypeOf(atom).toMatchTypeOf<Maybe<number>>()
+      expect(atom).toBeInstanceOf(Just)
+    } else {
+      expect.unreachable()
+    }
+  })
 
-    test("Result to Just", () => {
-      let result: Result<number> = Just(1)
-      if (result.isa(Just)) {
-        expectTypeOf(result).toMatchTypeOf<Just<number>>()
-      } else {
-        expect.unreachable()
-      }
-    })
+  test("Atom to Result", () => {
+    let atom = Atom(1)
+    if (atom.isa(Result)) {
+      expectTypeOf(atom).toMatchTypeOf<Result<number>>()
+      expect(atom).toBeInstanceOf(Just)
+    } else {
+      expect.unreachable()
+    }
+  })
 
-    test("Result to Failure", () => {
-      let result: Result<number> = Failure()
-      if (result.isa(Failure)) {
-        expectTypeOf(result).toMatchTypeOf<Failure>()
-      } else {
-        expect.unreachable()
-      }
-    })
+  test("Atom to Just", () => {
+    let atom = Atom(1)
+    if (atom.isa(Just)) {
+      expectTypeOf(atom).toMatchTypeOf<Just<number>>()
+      expect(atom).toBeInstanceOf(Just)
+    } else {
+      expect.unreachable()
+    }
+  })
+
+  test("Atom to Nothing", () => {
+    let atom = Atom(undefined)
+    if (atom.isa(Nothing)) {
+      expectTypeOf(atom).toMatchTypeOf<Nothing>()
+      expect(atom).toBeInstanceOf(Nothing)
+    } else {
+      expect.unreachable()
+    }
+  })
+
+  test("Maybe to Just", () => {
+    let maybe = Maybe(1)
+    if (maybe.isa(Just)) {
+      expectTypeOf(maybe).toMatchTypeOf<Just<number>>()
+    } else {
+      expect.unreachable()
+    }
+  })
+
+  test("Maybe to Nothing", () => {
+    let maybe: Maybe<number> = Nothing()
+    if (maybe.isa(Nothing)) {
+      expectTypeOf(maybe).toMatchTypeOf<Nothing>()
+    } else {
+      expect.unreachable()
+    }
+  })
+
+  test("Result to Just", () => {
+    let result: Result<number> = Just(1)
+    if (result.isa(Just)) {
+      expectTypeOf(result).toMatchTypeOf<Just<number>>()
+    } else {
+      expect.unreachable()
+    }
+  })
+
+  test("Result to Failure", () => {
+    let result: Result<number> = Failure()
+    if (result.isa(Failure)) {
+      expectTypeOf(result).toMatchTypeOf<Failure>()
+    } else {
+      expect.unreachable()
+    }
+  })
+
+  test("Maybe to Just", () => {
+    let maybe: Maybe<number> = Just(1)
+    if (maybe.isa(Just)) {
+      expectTypeOf(maybe).toMatchTypeOf<Just<number>>()
+    } else {
+      expect.unreachable()
+    }
+  })
+
+  test("Maybe to Nothing", () => {
+    let maybe: Maybe<number> = Nothing()
+    if (maybe.isa(Nothing)) {
+      expectTypeOf(maybe).toMatchTypeOf<Nothing>()
+    } else {
+      expect.unreachable()
+    }
+  })
+
+  test("Result to Just", () => {
+    let result: Result<number> = Just(1)
+    if (result.isa(Just)) {
+      expectTypeOf(result).toMatchTypeOf<Just<number>>()
+    } else {
+      expect.unreachable()
+    }
+  })
+
+  test("Result to Failure", () => {
+    let result: Result<number> = Failure()
+    if (result.isa(Failure)) {
+      expectTypeOf(result).toMatchTypeOf<Failure>()
+    } else {
+      expect.unreachable()
+    }
   })
 })
 

@@ -30,10 +30,17 @@ const ADT = (() => {
     isa: {
       /** @type {Atom["isa"]} */
       value: function(constructor) {
-        constraint(typeof constructor === "function", `isa expects a constructor (got ${constructor})`)
+        // @ts-ignore
+        if (constructor.name === "Atom") return this.name === "Just" || this.name === "Nothing" || this.name === "Failure"
+        // @ts-ignore
+        if (constructor.name === "Maybe") return this.name === "Just" || this.name === "Nothing"
+        // @ts-ignore
+        if (constructor.name === "Result") return this.name === "Just" || this.name === "Failure"
+
         return this instanceof constructor
       },
     },
+
     map: {
       /** @type {Atom["map"]} */
       value: function(fn) {
@@ -52,6 +59,37 @@ const ADT = (() => {
         throw new TypeError(`No match for ${this["name"] ?? "unknown type"}`)
       },
     },
+  }
+
+  /**
+   * @template T
+   * @param {T|Error} [value_or_error]
+   * @returns {globalThis.Atom<NonNullable<T>>}
+   */
+  function Atom(value_or_error) {
+    if (value_or_error == null) return Nothing()
+    if (value_or_error instanceof Error) return Failure(value_or_error)
+    return Just(value_or_error)
+  }
+
+  /**
+   * @template T
+   * @parame {T} [value]
+   * @returns {globalThis.Maybe<NonNullable<T>>}
+   */
+  function Maybe(value) {
+    return value == null ? Nothing() : Just(value)
+  }
+
+  /**
+   * @template T
+   * @param {T|Error} value_or_error
+   * @returns {globalThis.Result<NonNullable<T>>}
+   */
+  function Result(value_or_error) {
+    if (value_or_error == null) return Failure("Result value was null or undefined")
+    if (value_or_error instanceof Error) return Failure(value_or_error)
+    return Just(value_or_error)
   }
 
   /**
@@ -98,6 +136,9 @@ const ADT = (() => {
   }
 
   return {
+    Atom,
+    Maybe,
+    Result,
     Just,
     Nothing,
     Failure,
