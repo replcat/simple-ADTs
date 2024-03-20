@@ -97,10 +97,6 @@ const ADT = (() => {
     })
   }
 
-  Just.prototype.constructor = Just
-  Nothing.prototype.constructor = Nothing
-  Failure.prototype.constructor = Failure
-
   return {
     Just,
     Nothing,

@@ -1,13 +1,7 @@
 type Constructors = {
-  Just:
-    & (<T>(value: NonNullable<T>) => Just<NonNullable<T>>)
-    & (new<T>(value: NonNullable<T>) => Just<NonNullable<T>>)
-  Nothing:
-    & (() => Nothing)
-    & (new() => Nothing)
-  Failure:
-    & ((message_or_error?: string | Error, cause?: unknown) => Failure)
-    & (new(message_or_error?: string | Error, cause?: unknown) => Failure)
+  Just: <T>(value: NonNullable<T>) => Just<NonNullable<T>>
+  Nothing: () => Nothing
+  Failure: (message_or_error?: string | Error, cause?: unknown) => Failure
 }
 
 type AtomName = "Just" | "Nothing" | "Failure"
