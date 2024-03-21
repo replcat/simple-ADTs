@@ -19,11 +19,17 @@ describe("unwrap", () => {
     })
   })
 
-  describe.each([None, Fail])("on Empty types", empty => {
-    it("throws an error", () => {
-      expect(() => empty().unwrap()).toThrowError(
-        new TypeError(`Unwrapped an empty ${empty.name}`),
+  describe("on None", () => {
+    it("throws a generic error", () => {
+      expect(() => None().unwrap()).toThrowError(
+        new TypeError(`Unwrapped an empty None`),
       )
+    })
+  })
+
+  describe("on Fail", () => {
+    it("throws the wrapped error", () => {
+      expect(() => Fail("cool error").unwrap()).toThrowError("cool error")
     })
   })
 })

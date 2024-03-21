@@ -36,8 +36,6 @@ describe("on Maybe", () => {
   test("returns None when mapping over None", () => {
     let instance = Maybe()
     let mapped = instance.map(() => "test")
-
-    expect(mapped).toBeInstanceOf(Maybe)
     expect(mapped.isa(None)).toBe(true)
   })
 })
@@ -49,8 +47,6 @@ describe("on Result", () => {
   ])("transforms the value in Some", (value: any, fn: any) => {
     let instance = Result(value)
     let mapped = instance.map(fn)
-
-    expect(mapped).toBeInstanceOf(Result)
     if (mapped.isa(Some)) {
       expect(mapped.unwrap()).toBe(fn(value))
     } else {
@@ -62,7 +58,7 @@ describe("on Result", () => {
     let instance = Result(null, "test")
     let mapped = instance.map(() => "test")
 
-    expect(mapped).toBeInstanceOf(Result)
+    expect(mapped).toBeInstanceOf(Fail)
     expect(mapped.isa(Fail)).toBe(true)
   })
 })
