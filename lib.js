@@ -1,8 +1,12 @@
 /** @type {Constructors} */
+// @ts-ignore
 const constructors = (() => {
+  // Note that the type safety within this block is pretty weak!
+
   /**
+   * @this {globalThis.Mystery<T>}
    * @template T
-   * @param {T} value
+   * @param {NonNullable<T>} value
    * @returns {globalThis.Mystery<NonNullable<T>>}
    */
   function Mystery(value) {
@@ -14,7 +18,8 @@ const constructors = (() => {
     throw new TypeError(`${Mystery.name} cannot be directly constructed`)
   }
 
-  /** @type {Mystery["isa"]} */
+  // if you apply the function type to this the compiler dies :3
+  /** @this {globalThis.Mystery<T>} */
   Mystery.prototype.isa = function(constructor) {
     assert(typeof constructor === "function", `expected a constructor (got ${constructor})`)
     if (constructor.name === "Mystery") return this.name === "Some" || this.name === "None" || this.name === "Fail"
@@ -23,7 +28,10 @@ const constructors = (() => {
     return this instanceof constructor
   }
 
-  /** @type {globalThis.Mystery["map"]} */
+  /**
+   * @this {globalThis.Mystery<T>}
+   * @type {globalThis.Mystery["map"]}
+   */
   Mystery.prototype.map = function(fn) {
     assert(typeof fn === "function", `map expects a function (got ${fn})`)
     return "value" in this
@@ -31,16 +39,27 @@ const constructors = (() => {
       : this
   }
 
+  /**
+   * @this {globalThis.Mystery<T>}
+   * @type {globalThis.Mystery<T>["match"]}
+   */
   Mystery.prototype.match = function(matcher) {
+    // @ts-ignore
     if (typeof matcher.Some === "function" && this.isa(Some)) return matcher.Some(this.value)
+    // @ts-ignore
     if (typeof matcher.None === "function" && this.isa(None)) return matcher.None()
+    // @ts-ignore
     if (typeof matcher.Fail === "function" && this.isa(Fail)) return matcher.Fail(this["error"])
     throw new TypeError(`No match for ${this["name"] ?? "unknown type"}`)
   }
 
-  /** @type {globalThis.Mystery["unwrap"]} */
+  /**
+   * @this {globalThis.Some<T> | globalThis.None | globalThis.Fail}
+   * @type {globalThis.Mystery<T>["unwrap"]}
+   */
   Mystery.prototype.unwrap = function() {
     if ("value" in this) return this.value
+    if ("error" in this) throw this.error
     throw new TypeError(`Unwrapped an empty ${this.name}`)
   }
 
@@ -53,11 +72,6 @@ const constructors = (() => {
     return value == null ? None() : Some(value)
   }
 
-  Maybe.prototype = Mystery.prototype
-  Maybe.prototype.constructor = function() {
-    throw new TypeError(`${Maybe.name} cannot be directly constructed`)
-  }
-
   /**
    * @template T
    * @param {T} value
@@ -65,13 +79,7 @@ const constructors = (() => {
    * @returns {globalThis.Result<NonNullable<T>>}
    */
   function Result(value, on_null) {
-    if (value == null) return Fail(on_null)
-    return Some(value)
-  }
-
-  Result.prototype = Mystery.prototype
-  Result.prototype.constructor = function() {
-    throw new TypeError(`${Result.name} cannot be directly constructed`)
+    return value == null ? Fail(on_null) : Some(value)
   }
 
   /**
@@ -103,7 +111,7 @@ const constructors = (() => {
   None.prototype.constructor = None
 
   /**
-   * @param {string | Error} error
+   * @param {string | Error} [error]
    * @param {unknown} [cause]
    * @returns {globalThis.Fail}
    */
