@@ -2,7 +2,7 @@ import { fc, test } from "@fast-check/vitest"
 import { assert, describe, expect, expectTypeOf } from "vitest"
 
 import { constructors } from "../lib.js"
-const { Nebulous, Maybe, Result, Some, None, Fail } = constructors
+const { Mystery, Maybe, Result, Some, None, Fail } = constructors
 
 describe("the Some constructor", () => {
   test.prop([
@@ -10,7 +10,7 @@ describe("the Some constructor", () => {
   ])("constructs Some instances from non-null values", value => {
     // @ts-ignore
     let instance = Some(value)
-    expect(instance).toBeInstanceOf(Nebulous)
+    expect(instance).toBeInstanceOf(Mystery)
     expect(instance).toBeInstanceOf(Some)
     expect(instance).toMatchObject({ value })
   })
@@ -27,11 +27,11 @@ describe("the None constructor", () => {
   test("creates None instances", () => {
     let instance = None()
 
-    expect(instance).toBeInstanceOf(Nebulous)
+    expect(instance).toBeInstanceOf(Mystery)
     expect(instance).toBeInstanceOf(None)
   })
 
-  test("passing an argument is a type error", () => {
+  test("passing an argument isa a type error", () => {
     // @ts-expect-error
     None("blep")
   })
@@ -44,7 +44,7 @@ describe("the Fail constructor", () => {
   ])("creates Fail instances from errors and strings", error => {
     let instance = Fail(error)
 
-    expect(instance).toBeInstanceOf(Nebulous)
+    expect(instance).toBeInstanceOf(Mystery)
     expect(instance).toBeInstanceOf(Fail)
 
     expect(instance.error).toBeInstanceOf(Error)
@@ -62,11 +62,11 @@ describe("the Maybe constructor", () => {
   test("creates Maybe-typed Some or None instances", () => {
     let maybe_some = Maybe("blep")
     expectTypeOf(maybe_some).toMatchTypeOf<Maybe<string>>()
-    assert(maybe_some.is(Some))
+    assert(maybe_some.isa(Some))
 
     let maybe_none = Maybe()
     expectTypeOf(maybe_none).toMatchTypeOf<Maybe<unknown>>()
-    assert(maybe_none.is(None))
+    assert(maybe_none.isa(None))
   })
 })
 
@@ -74,23 +74,23 @@ describe("the Result constructor", () => {
   test("creates Result-typed Some or Fail instances", () => {
     let result_some = Result("blep")
     expectTypeOf(result_some).toMatchTypeOf<Result<string>>()
-    assert(result_some.is(Some))
+    assert(result_some.isa(Some))
 
     let result_none = Result()
     expectTypeOf(result_none).toMatchTypeOf<Result<unknown>>()
-    assert(result_none.is(Fail))
+    assert(result_none.isa(Fail))
     expect(result_none.error).toMatchInlineSnapshot(`[Error: (unspecified)]`)
 
     let result_none_with_error = Result(null, "test")
     expectTypeOf(result_none_with_error).toMatchTypeOf<Result<unknown>>()
-    assert(result_none_with_error.is(Fail))
+    assert(result_none_with_error.isa(Fail))
     expect(result_none_with_error.error).toMatchInlineSnapshot(`[Error: test]`)
   })
 })
 
 describe("type guards", () => {
   test.each([
-    { Type: Nebulous, of: Some, narrows_to: [Nebulous, Maybe, Result, Some] },
+    { Type: Mystery, of: Some, narrows_to: [Mystery, Maybe, Result, Some] },
     { Type: Maybe, of: Some, narrows_to: [Maybe, Some] },
     { Type: Maybe, of: None, narrows_to: [Maybe, None] },
     { Type: Result, of: Some, narrows_to: [Result, Some] },
@@ -101,7 +101,7 @@ describe("type guards", () => {
 
     for (let target of narrows_to) {
       assert(
-        instance.is(target),
+        instance.isa(target),
         `expected ${instance.name} (runtime ${of.name}) to narrow to ${target.name}`,
       )
     }
@@ -109,28 +109,28 @@ describe("type guards", () => {
 })
 
 describe("type-level tests", () => {
-  test("narrowing Nebulous", () => {
-    const nebulous = Nebulous("test")
+  test("narrowing Mystery", () => {
+    const mystery = Mystery("test")
 
-    if (nebulous.is(Nebulous)) expectTypeOf(nebulous).toMatchTypeOf<Nebulous<string>>()
-    if (nebulous.is(Maybe)) expectTypeOf(nebulous).toMatchTypeOf<Maybe<string>>()
-    if (nebulous.is(Result)) expectTypeOf(nebulous).toMatchTypeOf<Result<string>>()
-    if (nebulous.is(Some)) expectTypeOf(nebulous).toMatchTypeOf<Some<string>>()
+    if (mystery.isa(Mystery)) expectTypeOf(mystery).toMatchTypeOf<Mystery<string>>()
+    if (mystery.isa(Maybe)) expectTypeOf(mystery).toMatchTypeOf<Maybe<string>>()
+    if (mystery.isa(Result)) expectTypeOf(mystery).toMatchTypeOf<Result<string>>()
+    if (mystery.isa(Some)) expectTypeOf(mystery).toMatchTypeOf<Some<string>>()
   })
 
   test("narrowing Maybe", () => {
     const maybe = Maybe("test")
 
-    if (maybe.is(Maybe)) expectTypeOf(maybe).toMatchTypeOf<Maybe<string>>()
-    if (maybe.is(Some)) expectTypeOf(maybe).toMatchTypeOf<Some<string>>()
-    if (maybe.is(None)) expectTypeOf(maybe).toMatchTypeOf<None>()
+    if (maybe.isa(Maybe)) expectTypeOf(maybe).toMatchTypeOf<Maybe<string>>()
+    if (maybe.isa(Some)) expectTypeOf(maybe).toMatchTypeOf<Some<string>>()
+    if (maybe.isa(None)) expectTypeOf(maybe).toMatchTypeOf<None>()
   })
 
   test("narrowing Result", () => {
     const result = Result("test")
 
-    if (result.is(Result)) expectTypeOf(result).toMatchTypeOf<Result<string>>()
-    if (result.is(Some)) expectTypeOf(result).toMatchTypeOf<Some<string>>()
-    if (result.is(Fail)) expectTypeOf(result).toMatchTypeOf<Fail>()
+    if (result.isa(Result)) expectTypeOf(result).toMatchTypeOf<Result<string>>()
+    if (result.isa(Some)) expectTypeOf(result).toMatchTypeOf<Some<string>>()
+    if (result.isa(Fail)) expectTypeOf(result).toMatchTypeOf<Fail>()
   })
 })

@@ -1,5 +1,5 @@
 type Constructors = {
-  Nebulous: <T>(value: T) => Nebulous<NonNullable<T>>
+  Mystery: <T>(value: T) => Mystery<NonNullable<T>>
   Maybe: <T>(value?: T) => Maybe<NonNullable<T>>
   Result: <T>(value?: T, on_null?: string | Error) => Result<NonNullable<T>>
   Some: <T>(value: NonNullable<T>) => Some<NonNullable<T>>
@@ -7,16 +7,20 @@ type Constructors = {
   Fail: (error?: string | Error, cause?: unknown) => Fail
 }
 
-interface Nebulous<T = unknown> {
+/**
+ * The most general type, a union of everything.
+ * No (useful) runtime representation.
+ */
+interface Mystery<T = unknown> {
   name: "Some" | "None" | "Fail"
-  is<U>(constructor: (arg?: any) => U): this is U extends Some ? Some<T>
+  isa<U>(constructor: (arg?: any) => U): this is U extends Some ? Some<T>
     : U extends None ? None
     : U extends Fail ? Fail
     : U extends Maybe ? Maybe<T>
     : U extends Result ? Result<T>
-    : Nebulous<T> // :3
+    : Mystery<T> // :3
   unwrap(): T
-  map<U>(fn: (value: T) => NonNullable<U>): Nebulous<NonNullable<U>>
+  map<U>(fn: (value: T) => NonNullable<U>): Mystery<NonNullable<U>>
   match<JOut, NOut, FOut>(matcher: {
     Some: (value: T) => JOut
     None: () => NOut
@@ -24,7 +28,11 @@ interface Nebulous<T = unknown> {
   }): Consolidate<JOut | NOut | FOut>
 }
 
-interface Maybe<T = unknown> extends Nebulous<T> {
+/**
+ * Union of Some and None.
+ * No runtime representation.
+ */
+interface Maybe<T = unknown> extends Mystery<T> {
   name: "Some" | "None"
   map<U>(fn: (value: T) => NonNullable<U>): Maybe<NonNullable<U>>
   match<JOut, NOut>(matcher: {
@@ -33,7 +41,11 @@ interface Maybe<T = unknown> extends Nebulous<T> {
   }): Consolidate<JOut | NOut>
 }
 
-interface Result<T = unknown> extends Nebulous<T> {
+/**
+ * Union of Some and Fail.
+ * No runtime representation.
+ */
+interface Result<T = unknown> extends Mystery<T> {
   name: "Some" | "Fail"
   map<U>(fn: (value: T) => NonNullable<U>): Result<NonNullable<U>>
   match<JOut, FOut>(matcher: {
@@ -42,7 +54,11 @@ interface Result<T = unknown> extends Nebulous<T> {
   }): Consolidate<JOut | FOut>
 }
 
-interface Some<T = unknown> extends Nebulous<T> {
+/**
+ * A value that isn't merely hypothetical — it's right there, look.
+ * Corresponds to the `Some` type at runtime.
+ */
+interface Some<T = unknown> extends Mystery<T> {
   name: "Some"
   value: NonNullable<T>
   map<U>(fn: (value: T) => NonNullable<U>): Some<NonNullable<U>>
@@ -51,7 +67,11 @@ interface Some<T = unknown> extends Nebulous<T> {
   }): Consolidate<JOut>
 }
 
-interface None extends Nebulous<never> {
+/**
+ * An absent value that was optional anyway, so no big deal.
+ * Corresponds to the `None` type at runtime.
+ */
+interface None extends Mystery<never> {
   name: "None"
   map<U>(fn: (value: never) => U): this
   match<NOut>(matcher: {
@@ -59,7 +79,11 @@ interface None extends Nebulous<never> {
   }): Consolidate<NOut>
 }
 
-interface Fail extends Nebulous<never>, Error {
+/**
+ * An absent value that *possibly* should have existed (but it depends).
+ * Corresponds to the `Fail` type at runtime.
+ */
+interface Fail extends Mystery<never>, Error {
   name: "Fail"
   error: Error
   get message(): string
@@ -77,5 +101,5 @@ type Consolidate<Union> = [Union] extends [Some<infer T>] ? Some<T>
   : [Union] extends [Fail] ? Fail
   : [Union] extends [Some<infer T> | None] ? Maybe<T>
   : [Union] extends [Some<infer T> | Fail] ? Result<T>
-  : [Union] extends [Some<infer T> | None | Fail] ? Nebulous<T>
+  : [Union] extends [Some<infer T> | None | Fail] ? Mystery<T>
   : Union // not never, to allow other types through

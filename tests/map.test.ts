@@ -3,17 +3,17 @@ import { describe, expect, expectTypeOf } from "vitest"
 import { nonnullable_functions, nonnullable_values } from "./helpers/arbitraries.js"
 
 import { constructors } from "../lib.js"
-const { Nebulous, Maybe, Result, Some, None, Fail } = constructors
+const { Mystery, Maybe, Result, Some, None, Fail } = constructors
 
-describe("on Nebulous", () => {
+describe("on Mystery", () => {
   test.prop([
     nonnullable_values,
     nonnullable_functions,
   ])("transforms the value", (value: any, fn: any) => {
-    let instance = Nebulous(value)
+    let instance = Mystery(value)
     let mapped = instance.map(fn)
 
-    expect(mapped).toBeInstanceOf(Nebulous)
+    expect(mapped).toBeInstanceOf(Mystery)
     expect(mapped.unwrap()).toBe(fn(value))
   })
 })
@@ -26,7 +26,7 @@ describe("on Maybe", () => {
     let instance = Maybe(value)
     let mapped = instance.map(fn)
 
-    if (mapped.is(Some)) {
+    if (mapped.isa(Some)) {
       expect(mapped.value).toBe(fn(value))
     } else {
       expect.unreachable()
@@ -38,7 +38,7 @@ describe("on Maybe", () => {
     let mapped = instance.map(() => "test")
 
     expect(mapped).toBeInstanceOf(Maybe)
-    expect(mapped.is(None)).toBe(true)
+    expect(mapped.isa(None)).toBe(true)
   })
 })
 
@@ -51,7 +51,7 @@ describe("on Result", () => {
     let mapped = instance.map(fn)
 
     expect(mapped).toBeInstanceOf(Result)
-    if (mapped.is(Some)) {
+    if (mapped.isa(Some)) {
       expect(mapped.unwrap()).toBe(fn(value))
     } else {
       expect.unreachable()
@@ -63,7 +63,7 @@ describe("on Result", () => {
     let mapped = instance.map(() => "test")
 
     expect(mapped).toBeInstanceOf(Result)
-    expect(mapped.is(Fail)).toBe(true)
+    expect(mapped.isa(Fail)).toBe(true)
   })
 })
 
@@ -99,29 +99,29 @@ describe("on Fail", () => {
 })
 
 describe("type-level tests", () => {
-  test("mapping over Nebulous", () => {
-    const nebulous = Nebulous("test")
-    const mapped = nebulous.map(value => value.length)
+  test("mapping over Mystery", () => {
+    const mystery = Mystery("test")
+    const mapped = mystery.map(value => value.length)
 
-    if (mapped.is(Nebulous)) expectTypeOf(mapped).toMatchTypeOf<Nebulous<number>>()
+    if (mapped.isa(Mystery)) expectTypeOf(mapped).toMatchTypeOf<Mystery<number>>()
   })
 
   test("mapping over Maybe", () => {
     const maybe = Maybe("test")
     const mapped = maybe.map(value => value.length)
 
-    if (mapped.is(Maybe)) expectTypeOf(mapped).toMatchTypeOf<Maybe<number>>()
-    if (mapped.is(Some)) expectTypeOf(mapped).toMatchTypeOf<Some<number>>()
-    if (mapped.is(None)) expectTypeOf(mapped).toMatchTypeOf<None>()
+    if (mapped.isa(Maybe)) expectTypeOf(mapped).toMatchTypeOf<Maybe<number>>()
+    if (mapped.isa(Some)) expectTypeOf(mapped).toMatchTypeOf<Some<number>>()
+    if (mapped.isa(None)) expectTypeOf(mapped).toMatchTypeOf<None>()
   })
 
   test("mapping over Result", () => {
     const result = Result("test")
     const mapped = result.map(value => value.length)
 
-    if (mapped.is(Result)) expectTypeOf(mapped).toMatchTypeOf<Result<number>>()
-    if (mapped.is(Some)) expectTypeOf(mapped).toMatchTypeOf<Some<number>>()
-    if (mapped.is(Fail)) expectTypeOf(mapped).toMatchTypeOf<Fail>()
+    if (mapped.isa(Result)) expectTypeOf(mapped).toMatchTypeOf<Result<number>>()
+    if (mapped.isa(Some)) expectTypeOf(mapped).toMatchTypeOf<Some<number>>()
+    if (mapped.isa(Fail)) expectTypeOf(mapped).toMatchTypeOf<Fail>()
   })
 
   test("mapping over Some", () => {

@@ -1,47 +1,45 @@
 /** @type {Constructors} */
 const constructors = (() => {
-  // Note that the type safety in this block is deliberately pretty weak!
-
   /**
    * @template T
    * @param {T} value
-   * @returns {globalThis.Nebulous<NonNullable<T>>}
+   * @returns {globalThis.Mystery<NonNullable<T>>}
    */
-  function Nebulous(value) {
+  function Mystery(value) {
     return Some(value)
   }
 
-  Nebulous.prototype = Object.create(Object.prototype)
-  Nebulous.prototype.constructor = function() {
-    throw new TypeError(`${Nebulous.name} cannot be directly constructed`)
+  Mystery.prototype = Object.create(Object.prototype)
+  Mystery.prototype.constructor = function() {
+    throw new TypeError(`${Mystery.name} cannot be directly constructed`)
   }
 
-  /** @type {Nebulous["is"]} */
-  Nebulous.prototype.is = function(constructor) {
+  /** @type {Mystery["isa"]} */
+  Mystery.prototype.isa = function(constructor) {
     assert(typeof constructor === "function", `expected a constructor (got ${constructor})`)
-    if (constructor.name === "Nebulous") return this.name === "Some" || this.name === "None" || this.name === "Fail"
+    if (constructor.name === "Mystery") return this.name === "Some" || this.name === "None" || this.name === "Fail"
     if (constructor.name === "Maybe") return this.name === "Some" || this.name === "None"
     if (constructor.name === "Result") return this.name === "Some" || this.name === "Fail"
     return this instanceof constructor
   }
 
-  /** @type {globalThis.Nebulous["map"]} */
-  Nebulous.prototype.map = function(fn) {
+  /** @type {globalThis.Mystery["map"]} */
+  Mystery.prototype.map = function(fn) {
     assert(typeof fn === "function", `map expects a function (got ${fn})`)
     return "value" in this
       ? this.constructor(fn(this.value))
       : this
   }
 
-  Nebulous.prototype.match = function(matcher) {
-    if (typeof matcher.Some === "function" && this["is"](Some)) return matcher.Some(this.value)
-    if (typeof matcher.None === "function" && this["is"](None)) return matcher.None()
-    if (typeof matcher.Fail === "function" && this["is"](Fail)) return matcher.Fail(this["error"])
+  Mystery.prototype.match = function(matcher) {
+    if (typeof matcher.Some === "function" && this.isa(Some)) return matcher.Some(this.value)
+    if (typeof matcher.None === "function" && this.isa(None)) return matcher.None()
+    if (typeof matcher.Fail === "function" && this.isa(Fail)) return matcher.Fail(this["error"])
     throw new TypeError(`No match for ${this["name"] ?? "unknown type"}`)
   }
 
-  /** @type {globalThis.Nebulous["unwrap"]} */
-  Nebulous.prototype.unwrap = function() {
+  /** @type {globalThis.Mystery["unwrap"]} */
+  Mystery.prototype.unwrap = function() {
     if ("value" in this) return this.value
     throw new TypeError(`Unwrapped an empty ${this.name}`)
   }
@@ -55,7 +53,7 @@ const constructors = (() => {
     return value == null ? None() : Some(value)
   }
 
-  Maybe.prototype = Nebulous.prototype
+  Maybe.prototype = Mystery.prototype
   Maybe.prototype.constructor = function() {
     throw new TypeError(`${Maybe.name} cannot be directly constructed`)
   }
@@ -71,7 +69,7 @@ const constructors = (() => {
     return Some(value)
   }
 
-  Result.prototype = Nebulous.prototype
+  Result.prototype = Mystery.prototype
   Result.prototype.constructor = function() {
     throw new TypeError(`${Result.name} cannot be directly constructed`)
   }
@@ -89,7 +87,7 @@ const constructors = (() => {
     })
   }
 
-  Some.prototype = Object.create(Nebulous.prototype)
+  Some.prototype = Object.create(Mystery.prototype)
   Some.prototype.constructor = Some
 
   /**
@@ -101,7 +99,7 @@ const constructors = (() => {
     })
   }
 
-  None.prototype = Object.create(Nebulous.prototype)
+  None.prototype = Object.create(Mystery.prototype)
   None.prototype.constructor = None
 
   /**
@@ -122,11 +120,11 @@ const constructors = (() => {
     })
   }
 
-  Fail.prototype = Object.create(Nebulous.prototype)
+  Fail.prototype = Object.create(Mystery.prototype)
   Fail.prototype.constructor = Fail
 
   return {
-    Nebulous,
+    Mystery,
     Maybe,
     Result,
     Some,

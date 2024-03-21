@@ -3,7 +3,7 @@ import { describe, expect, expectTypeOf } from "vitest"
 import { nonnullable_functions, nonnullable_values } from "./helpers/arbitraries.js"
 
 import { constructors } from "../lib.js"
-const { Nebulous, Maybe, Result, Some, None, Fail } = constructors
+const { Mystery, Maybe, Result, Some, None, Fail } = constructors
 
 describe("type transformations", () => {
   test("Maybe<string> to Result<number>", () => {
@@ -31,7 +31,7 @@ describe("type transformations", () => {
 })
 
 describe.each([
-  { Type: Nebulous },
+  { Type: Mystery },
   { Type: Maybe },
   { Type: Result },
   { Type: Some },
@@ -55,9 +55,9 @@ describe.each([
       Fail: handle_fail,
     })
 
-    if (instance.is(Some)) expect(result).toBe(handle_some(value))
-    else if (instance.is(None)) expect(result).toBe(handle_none())
-    else if (instance.is(Fail)) expect(result).toBe(handle_fail(instance.error))
+    if (instance.isa(Some)) expect(result).toBe(handle_some(value))
+    else if (instance.isa(None)) expect(result).toBe(handle_none())
+    else if (instance.isa(Fail)) expect(result).toBe(handle_fail(instance.error))
     else expect.unreachable()
   })
 })
