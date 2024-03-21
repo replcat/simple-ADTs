@@ -207,7 +207,7 @@ describe("chaining over a None", () => {
       const instance = None()
       const chained = instance.chain(fn)
 
-      expectTypeOf(chained).toEqualTypeOf(instance) // failing, infers: Maybe<never>
+      expectTypeOf(chained).toEqualTypeOf(instance)
       assert(chained.isa(None))
     })
   })
@@ -222,7 +222,7 @@ describe("chaining over a None", () => {
       const instance = None()
       const chained = instance.chain(fn)
 
-      expectTypeOf(chained).toEqualTypeOf(instance) // failing, infers: Maybe<never>
+      expectTypeOf(chained).toEqualTypeOf(instance)
       assert(chained.isa(None))
     })
   })
@@ -239,7 +239,7 @@ describe("chaining over a Fail", () => {
       const instance = Fail(input)
       const chained = instance.chain(fn)
 
-      expectTypeOf(chained).toEqualTypeOf(instance) // failing, infers: Result<never>
+      expectTypeOf(chained).toEqualTypeOf(instance)
       assert(chained.isa(Fail))
     })
   })
@@ -254,7 +254,7 @@ describe("chaining over a Fail", () => {
       const instance = Fail(new Error(`Error: ${input}`))
       const chained = instance.chain(fn)
 
-      expectTypeOf(chained).toEqualTypeOf(instance) // failing, infers: Result<never>
+      expectTypeOf(chained).toEqualTypeOf(instance)
       assert(chained.isa(Fail))
     })
   })
