@@ -41,6 +41,18 @@ const constructors = (() => {
 
   /**
    * @this {globalThis.Mystery<T>}
+   * @type {globalThis.Mystery["chain"]}
+   */
+  Mystery.prototype.chain = function(fn) {
+    assert(typeof fn === "function", `chain expects a function (got ${fn})`)
+    // @ts-ignore
+    return "value" in this
+      ? fn(this.value)
+      : this
+  }
+
+  /**
+   * @this {globalThis.Mystery<T>}
    * @type {globalThis.Mystery<T>["match"]}
    */
   Mystery.prototype.match = function(matcher) {
