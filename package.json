@@ -8,6 +8,7 @@
     "test": "vitest --no-watch"
   },
   "devDependencies": {
+    "@fast-check/vitest": "^0.1.0",
     "@types/node": "^20.11",
     "dprint": "^0.45",
     "typescript": "^5.4",

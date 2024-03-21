@@ -1,99 +1,65 @@
-import { describe, expect, expectTypeOf, test } from "vitest"
+import { fc, test } from "@fast-check/vitest"
+import { describe, expect, expectTypeOf } from "vitest"
+import { nonnullable_functions, nonnullable_values } from "./helpers/arbitraries.js"
 
 import { constructors } from "../lib.js"
 const { Nebulous, Maybe, Result, Some, None, Fail } = constructors
 
-test("piping directly to type constructors", () => {
-  let nebulous: Nebulous<number>[] = [Some(1), None(), Fail()]
-  let result = nebulous.map(item =>
-    item.match({
-      Some,
-      None,
-      Fail: None,
+describe("type transformations", () => {
+  test("Maybe<string> to Result<number>", () => {
+    const maybe = Maybe("test")
+    const result = maybe.match({
+      Some: value => Some(value.length),
+      None: Fail,
     })
-  )
+    expectTypeOf(result).toMatchTypeOf<Result<number>>()
+  })
 
-  expect(result).toEqual([Some(1), None(), None()])
-  expectTypeOf(result).toEqualTypeOf<Maybe<number>[]>()
+  test("reducing Maybes to a number", () => {
+    let maybes: Maybe<string>[] = [Some("one"), None(), Some("two")]
+    let result = maybes.reduce(
+      (acc, maybe) =>
+        acc + maybe.match({
+          Some: value => value.length,
+          None: () => 10,
+        }),
+      0,
+    )
+    expectTypeOf(result).toEqualTypeOf<number>()
+    expect(result).toBe(16)
+  })
 })
 
-test("matching unknown nebulouss", () => {
-  let nebulous: Nebulous<number>[] = [Some(1), None(), Fail()]
+describe.each([
+  { Type: Nebulous },
+  { Type: Maybe },
+  { Type: Result },
+  { Type: Some },
+  { Type: None },
+  { Type: Fail },
+])("$Type.name", ({ Type }) => {
+  test.prop([
+    Type === Fail
+      ? fc.oneof(fc.string(), fc.string().map(message => new Error(message)))
+      : nonnullable_values,
+    fc.func(nonnullable_values),
+    fc.func(nonnullable_values),
+    fc.func(nonnullable_values),
+  ])("handles the match", (value: any, handle_some, handle_none, handle_fail) => {
+    let instance = Type(Type === None ? undefined : value)
 
-  let result = nebulous.map(item =>
-    item.match({
-      Some: value => {
-        expect(value).toBe(1)
-        expectTypeOf(value).toEqualTypeOf<number>()
-        return Some(value)
-      },
-
-      None: function() {
-        expect(arguments.length).toBe(0)
-        return Some(0)
-      },
-
-      Fail: error => {
-        expect(error).toBeInstanceOf(Error)
-        expect(error.message).toBe("(unspecified)")
-        expectTypeOf(error).toEqualTypeOf<Error>()
-        return Some(0)
-      },
+    // @ts-ignore
+    let result = instance.match({
+      Some: handle_some,
+      None: handle_none,
+      Fail: handle_fail,
     })
-  )
 
-  expectTypeOf(result).toEqualTypeOf<Some<number>[]>()
-  expect(result).toEqual([Some(1), Some(0), Some(0)])
-  expect.assertions(5)
-})
-
-test("matching maybes", () => {
-  // unfortunately requires an explicit type annotation
-  let numbers: Maybe<number>[] = [Some(1), None(), Some(2)]
-
-  let result = numbers.map(maybe =>
-    maybe.match({
-      Some: _ => None(),
-      None: () => Some(0),
-    })
-  )
-
-  expect(result).toEqual([None(), Some(0), None()])
-  expectTypeOf(result).toEqualTypeOf<Maybe<0>[]>()
-})
-
-test("matching results", () => {
-  let numbers: Result<number>[] = [Some(1), Fail(), Some(2)]
-
-  let result = numbers.map(maybe =>
-    maybe.match({
-      Some: value => None(),
-      Fail: error => Some(0),
-    })
-  )
-
-  expect(result).toEqual([None(), Some(0), None()])
-  expectTypeOf(result).toEqualTypeOf<Maybe<0>[]>()
-})
-
-test("matching maybes", () => {
-  // unfortunately requires an explicit type annotation here
-  let maybe_numbers: Maybe<number>[] = [Some(1), None(), Some(2)]
-
-  let switcheroo = maybe_numbers.map(maybe =>
-    maybe.match({
-      Some: value => None(),
-      None: () => Some(0),
-    })
-  )
-
-  expect(switcheroo).toEqual([None(), Some(0), None()])
-
-  for (let nebulous of switcheroo) {
-    if (nebulous.is(Some)) {
-      expectTypeOf(nebulous).toMatchTypeOf<Some<0>>()
-    }
-  }
+    if (instance.is(Some)) expect(result).toBe(handle_some(value))
+    else if (instance.is(None)) expect(result).toBe(handle_none())
+    else if (instance.is(Fail)) expect(result).toBe(handle_fail(instance.error))
+    else expect.unreachable()
+  })
 })
 
 describe("errors", () => {

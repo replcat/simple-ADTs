@@ -5,6 +5,9 @@ settings:
   excludeLinksFromLockfile: false
 
 devDependencies:
+  '@fast-check/vitest':
+    specifier: ^0.1.0
+    version: 0.1.0(vitest@1.4.0)
   '@types/node':
     specifier: ^20.11
     version: 20.11.29
@@ -282,6 +285,15 @@ packages:
     requiresBuild: true
     dev: true
     optional: true
+
+  /@fast-check/vitest@0.1.0(vitest@1.4.0):
+    resolution: {integrity: sha512-AKgtK1/TOvFC1U8YjYAz1okILr9+ePXPgpMsdlQ0w+slwRzxUYkidSduHE/nN+P9RWlE8VTJC0ma/P86APyxHA==}
+    peerDependencies:
+      vitest: '>=0.28.1 <1.0.0 || ^1'
+    dependencies:
+      fast-check: 3.16.0
+      vitest: 1.4.0(@types/node@20.11.29)
+    dev: true
 
   /@jest/schemas@29.6.3:
     resolution: {integrity: sha512-mo5j5X+jIZmJQveBKeS/clAueipV7KgiX1vMgCxam1RNYiqE1w62n0/tJJnHtjW8ZHcQco5gY85jA3mi0L+nSA==}
@@ -594,6 +606,13 @@ packages:
       strip-final-newline: 3.0.0
     dev: true
 
+  /fast-check@3.16.0:
+    resolution: {integrity: sha512-k8GtQHi4pJoRQ1gVDFQno+/FVkowo/ehiz/aCj9O/D7HRWb1sSFzNrw+iPVU8QlWtH+jNwbuN+dDVg3QkS56DQ==}
+    engines: {node: '>=8.0.0'}
+    dependencies:
+      pure-rand: 6.0.4
+    dev: true
+
   /fsevents@2.3.3:
     resolution: {integrity: sha512-5xoDfX+fL7faATnagmWPpbFtwh/R77WmMMqqHGS65C3vvB0YHrgF+B1YmZ3441tMj5n63k0212XNoJwzlhffQw==}
     engines: {node: ^8.16.0 || ^10.6.0 || >=11.0.0}
@@ -749,6 +768,10 @@ packages:
       '@jest/schemas': 29.6.3
       ansi-styles: 5.2.0
       react-is: 18.2.0
+    dev: true
+
+  /pure-rand@6.0.4:
+    resolution: {integrity: sha512-LA0Y9kxMYv47GIPJy6MI84fqTd2HmYZI83W/kM/SkKfDlajnZYfmXFTxkbY+xSBPkLJxltMa9hIkmdc29eguMA==}
     dev: true
 
   /react-is@18.2.0:

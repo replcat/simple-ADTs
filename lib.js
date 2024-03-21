@@ -28,7 +28,7 @@ const constructors = (() => {
   /** @type {globalThis.Nebulous["map"]} */
   Nebulous.prototype.map = function(fn) {
     assert(typeof fn === "function", `map expects a function (got ${fn})`)
-    return this.value
+    return "value" in this
       ? this.constructor(fn(this.value))
       : this
   }
