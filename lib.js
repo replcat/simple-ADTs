@@ -40,6 +40,21 @@ const constructors = (() => {
   }
 
   /**
+   * @this {globalThis.Mystery<(value: T) => U>}
+   * @type {globalThis.Mystery["ap"]}
+   */
+  Mystery.prototype.ap = function(arg) {
+    if ("value" in this && "value" in arg) {
+      assert(typeof this.value === "function", `ap expects a function (got ${this.value})`)
+      const constructor_name = arg.name === "Some" ? "Some" : arg.name === "None" ? "None" : arg.name === "Fail" ? "Fail" : "Mystery"
+      const constructor = constructors[constructor_name]
+      return constructor(this.value(arg.value))
+    } else {
+      return "value" in this ? arg : this
+    }
+  }
+
+  /**
    * @this {globalThis.Mystery<T>}
    * @type {globalThis.Mystery["chain"]}
    */
@@ -169,7 +184,7 @@ function trim_stack(stack) {
  */
 function assert(condition, message) {
   if (!condition) {
-    const error = new TypeError(`Invariant violation: ${message}`)
+    const error = new TypeError(message ?? "(unspecified)")
     error.stack = trim_stack(error.stack)
     throw error
   }

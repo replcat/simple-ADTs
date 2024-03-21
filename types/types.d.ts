@@ -21,6 +21,9 @@ interface Mystery<T = unknown> {
     : Mystery<T> // :3
   unwrap(): T
   map<U>(fn: (value: T) => NonNullable<U>): Mystery<NonNullable<U>>
+
+  ap<U>(this: Mystery<(value: T) => U>, arg: Mystery<T>): Mystery<U>
+
   chain<U>(fn: (value: T) => NonNullable<U>): U extends None ? None
     : U extends Fail ? Fail
     : NonNullable<U> extends Maybe<infer V> ? Maybe<V>
@@ -28,6 +31,7 @@ interface Mystery<T = unknown> {
     : NonNullable<U> extends Some<infer V> ? Some<V>
     : NonNullable<U> extends Mystery<infer V> ? Mystery<V>
     : Mystery<NonNullable<U>>
+
   match<JOut, NOut, FOut>(matcher: {
     Some: (value: T) => JOut
     None: () => NOut
