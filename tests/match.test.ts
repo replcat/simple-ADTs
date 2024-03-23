@@ -3,7 +3,7 @@ import { describe, expect, expectTypeOf } from "vitest"
 import { nonnullable_functions, nonnullable_values } from "./helpers/arbitraries.js"
 
 import { constructors } from "../lib.js"
-const { Mystery, Maybe, Result, Some, None, Fail } = constructors
+const { Base, Maybe, Result, Some, None, Fail } = constructors
 
 describe("type transformations", () => {
   test("Maybe<string> to Result<number>", () => {
@@ -31,7 +31,7 @@ describe("type transformations", () => {
 })
 
 describe.each([
-  { Type: Mystery },
+  { Type: Base },
   { Type: Maybe },
   { Type: Result },
   { Type: Some },

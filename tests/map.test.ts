@@ -1,19 +1,23 @@
 import { fc, test } from "@fast-check/vitest"
-import { describe, expect, expectTypeOf } from "vitest"
+import { assert, describe, expect, expectTypeOf } from "vitest"
 import { nonnullable_functions, nonnullable_values } from "./helpers/arbitraries.js"
 
 import { constructors } from "../lib.js"
-const { Mystery, Maybe, Result, Some, None, Fail } = constructors
+const { Base, Maybe, Result, Some, None, Fail } = constructors
 
-describe("on Mystery", () => {
+function nonnullable<T>(t: fc.Arbitrary<T>): fc.Arbitrary<NonNullable<T>> {
+  return t.filter(value => value != null) as fc.Arbitrary<NonNullable<T>>
+}
+
+describe("on Base", () => {
   test.prop([
     nonnullable_values,
     nonnullable_functions,
   ])("transforms the value", (value: any, fn: any) => {
-    let instance = Mystery(value)
+    let instance = Base(value)
     let mapped = instance.map(fn)
 
-    expect(mapped).toBeInstanceOf(Mystery)
+    expect(mapped).toBeInstanceOf(Base)
     expect(mapped.unwrap()).toBe(fn(value))
   })
 })
@@ -95,11 +99,11 @@ describe("on Fail", () => {
 })
 
 describe("type-level tests", () => {
-  test("mapping over Mystery", () => {
-    const mystery = Mystery("test")
-    const mapped = mystery.map(value => value.length)
+  test("mapping over Base", () => {
+    const base = Base("test")
+    const mapped = base.map(value => value.length)
 
-    if (mapped.isa(Mystery)) expectTypeOf(mapped).toMatchTypeOf<Mystery<number>>()
+    if (mapped.isa(Base)) expectTypeOf(mapped).toMatchTypeOf<Base<number>>()
   })
 
   test("mapping over Maybe", () => {

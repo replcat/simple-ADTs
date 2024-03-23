@@ -2,7 +2,7 @@ import { fc, test } from "@fast-check/vitest"
 import { assert, describe, expect, expectTypeOf, it } from "vitest"
 
 import { constructors } from "../lib.js"
-const { Mystery, Maybe, Result, Some, None, Fail } = constructors
+const { Base, Maybe, Result, Some, None, Fail } = constructors
 
 function nonnullable<T>(t: fc.Arbitrary<T>): fc.Arbitrary<NonNullable<T>> {
   return t.filter(value => value != null) as fc.Arbitrary<NonNullable<T>>
@@ -58,7 +58,7 @@ describe("chaining over a Maybe", () => {
   describe("with a type-broadening function", () => {
     const it = test.prop({
       input: nonnullable(fc.float()),
-      fn: fc.constantFrom((value: number) => Mystery(value)),
+      fn: fc.constantFrom((value: number) => Base(value)),
     })
 
     it("returns the expected value and type", ({ input, fn }) => {

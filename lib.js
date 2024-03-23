@@ -4,35 +4,35 @@ const constructors = (() => {
   // Note that the type safety within this block is pretty weak!
 
   /**
-   * @this {globalThis.Mystery<T>}
+   * @this {globalThis.Base<T>}
    * @template T
    * @param {NonNullable<T>} value
-   * @returns {globalThis.Mystery<NonNullable<T>>}
+   * @returns {globalThis.Base<NonNullable<T>>}
    */
-  function Mystery(value) {
+  function Base(value) {
     return Some(value)
   }
 
-  Mystery.prototype = Object.create(Object.prototype)
-  Mystery.prototype.constructor = function() {
-    throw new TypeError(`${Mystery.name} cannot be directly constructed`)
+  Base.prototype = Object.create(Object.prototype)
+  Base.prototype.constructor = function() {
+    throw new TypeError(`${Base.name} cannot be directly constructed`)
   }
 
   // if you apply the function type to this the compiler dies :3
-  /** @this {globalThis.Mystery<T>} */
-  Mystery.prototype.isa = function(constructor) {
+  /** @this {globalThis.Base<T>} */
+  Base.prototype.isa = function(constructor) {
     assert(typeof constructor === "function", `expected a constructor (got ${constructor})`)
-    if (constructor.name === "Mystery") return this.name === "Some" || this.name === "None" || this.name === "Fail"
+    if (constructor.name === "Base") return this.name === "Some" || this.name === "None" || this.name === "Fail"
     if (constructor.name === "Maybe") return this.name === "Some" || this.name === "None"
     if (constructor.name === "Result") return this.name === "Some" || this.name === "Fail"
     return this instanceof constructor
   }
 
   /**
-   * @this {globalThis.Mystery<T>}
-   * @type {globalThis.Mystery["map"]}
+   * @this {globalThis.Base<T>}
+   * @type {globalThis.Base["map"]}
    */
-  Mystery.prototype.map = function(fn) {
+  Base.prototype.map = function(fn) {
     assert(typeof fn === "function", `map expects a function (got ${fn})`)
     return "value" in this
       ? this.constructor(fn(this.value))
@@ -40,13 +40,13 @@ const constructors = (() => {
   }
 
   /**
-   * @this {globalThis.Mystery<(value: T) => U>}
-   * @type {globalThis.Mystery["ap"]}
+   * @this {globalThis.Base<(value: T) => U>}
+   * @type {globalThis.Base["ap"]}
    */
-  Mystery.prototype.ap = function(arg) {
+  Base.prototype.ap = function(arg) {
     if ("value" in this && "value" in arg) {
       assert(typeof this.value === "function", `ap expects a function (got ${this.value})`)
-      const constructor_name = arg.name === "Some" ? "Some" : arg.name === "None" ? "None" : arg.name === "Fail" ? "Fail" : "Mystery"
+      const constructor_name = arg.name === "Some" ? "Some" : arg.name === "None" ? "None" : arg.name === "Fail" ? "Fail" : "Base"
       const constructor = constructors[constructor_name]
       return constructor(this.value(arg.value))
     } else {
@@ -55,10 +55,10 @@ const constructors = (() => {
   }
 
   /**
-   * @this {globalThis.Mystery<T>}
-   * @type {globalThis.Mystery["chain"]}
+   * @this {globalThis.Base<T>}
+   * @type {globalThis.Base["chain"]}
    */
-  Mystery.prototype.chain = function(fn) {
+  Base.prototype.chain = function(fn) {
     assert(typeof fn === "function", `chain expects a function (got ${fn})`)
     // @ts-ignore
     return "value" in this
@@ -67,10 +67,10 @@ const constructors = (() => {
   }
 
   /**
-   * @this {globalThis.Mystery<T>}
-   * @type {globalThis.Mystery<T>["match"]}
+   * @this {globalThis.Base<T>}
+   * @type {globalThis.Base<T>["match"]}
    */
-  Mystery.prototype.match = function(matcher) {
+  Base.prototype.match = function(matcher) {
     // @ts-ignore
     if (typeof matcher.Some === "function" && this.isa(Some)) return matcher.Some(this.value)
     // @ts-ignore
@@ -82,9 +82,9 @@ const constructors = (() => {
 
   /**
    * @this {globalThis.Some<T> | globalThis.None | globalThis.Fail}
-   * @type {globalThis.Mystery<T>["unwrap"]}
+   * @type {globalThis.Base<T>["unwrap"]}
    */
-  Mystery.prototype.unwrap = function() {
+  Base.prototype.unwrap = function() {
     if ("value" in this) return this.value
     if ("error" in this) throw this.error
     throw new TypeError(`Unwrapped an empty ${this.name}`)
@@ -122,7 +122,7 @@ const constructors = (() => {
     })
   }
 
-  Some.prototype = Object.create(Mystery.prototype)
+  Some.prototype = Object.create(Base.prototype)
   Some.prototype.constructor = Some
 
   /**
@@ -134,7 +134,7 @@ const constructors = (() => {
     })
   }
 
-  None.prototype = Object.create(Mystery.prototype)
+  None.prototype = Object.create(Base.prototype)
   None.prototype.constructor = None
 
   /**
@@ -155,11 +155,11 @@ const constructors = (() => {
     })
   }
 
-  Fail.prototype = Object.create(Mystery.prototype)
+  Fail.prototype = Object.create(Base.prototype)
   Fail.prototype.constructor = Fail
 
   return {
-    Mystery,
+    Base,
     Maybe,
     Result,
     Some,

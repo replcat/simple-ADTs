@@ -3,7 +3,7 @@ import { describe, expect, expectTypeOf } from "vitest"
 import { nonnullable_values } from "./helpers/arbitraries.js"
 
 import { constructors } from "../lib.js"
-const { Mystery, Maybe, Result, Some, None, Fail } = constructors
+const { Base, Maybe, Result, Some, None, Fail } = constructors
 
 describe("unwrap", () => {
   describe("on Some", () => {

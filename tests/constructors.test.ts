@@ -2,7 +2,7 @@ import { fc, test } from "@fast-check/vitest"
 import { assert, describe, expect, expectTypeOf } from "vitest"
 
 import { constructors } from "../lib.js"
-const { Mystery, Maybe, Result, Some, None, Fail } = constructors
+const { Base, Maybe, Result, Some, None, Fail } = constructors
 
 describe("the Some constructor", () => {
   test.prop([
@@ -10,7 +10,7 @@ describe("the Some constructor", () => {
   ])("constructs Some instances from non-null values", value => {
     // @ts-ignore
     let instance = Some(value)
-    expect(instance).toBeInstanceOf(Mystery)
+    expect(instance).toBeInstanceOf(Base)
     expect(instance).toBeInstanceOf(Some)
     expect(instance).toMatchObject({ value })
   })
@@ -27,7 +27,7 @@ describe("the None constructor", () => {
   test("creates None instances", () => {
     let instance = None()
 
-    expect(instance).toBeInstanceOf(Mystery)
+    expect(instance).toBeInstanceOf(Base)
     expect(instance).toBeInstanceOf(None)
   })
 
@@ -44,7 +44,7 @@ describe("the Fail constructor", () => {
   ])("creates Fail instances from errors and strings", error => {
     let instance = Fail(error)
 
-    expect(instance).toBeInstanceOf(Mystery)
+    expect(instance).toBeInstanceOf(Base)
     expect(instance).toBeInstanceOf(Fail)
 
     expect(instance.error).toBeInstanceOf(Error)
@@ -90,7 +90,7 @@ describe("the Result constructor", () => {
 
 describe("type guards", () => {
   test.each([
-    { Type: Mystery, of: Some, narrows_to: [Mystery, Maybe, Result, Some] },
+    { Type: Base, of: Some, narrows_to: [Base, Maybe, Result, Some] },
     { Type: Maybe, of: Some, narrows_to: [Maybe, Some] },
     { Type: Maybe, of: None, narrows_to: [Maybe, None] },
     { Type: Result, of: Some, narrows_to: [Result, Some] },
@@ -109,13 +109,13 @@ describe("type guards", () => {
 })
 
 describe("type-level tests", () => {
-  test("narrowing Mystery", () => {
-    const mystery = Mystery("test")
+  test("narrowing Base", () => {
+    const base = Base("test")
 
-    if (mystery.isa(Mystery)) expectTypeOf(mystery).toMatchTypeOf<Mystery<string>>()
-    if (mystery.isa(Maybe)) expectTypeOf(mystery).toMatchTypeOf<Maybe<string>>()
-    if (mystery.isa(Result)) expectTypeOf(mystery).toMatchTypeOf<Result<string>>()
-    if (mystery.isa(Some)) expectTypeOf(mystery).toMatchTypeOf<Some<string>>()
+    if (base.isa(Base)) expectTypeOf(base).toMatchTypeOf<Base<string>>()
+    if (base.isa(Maybe)) expectTypeOf(base).toMatchTypeOf<Maybe<string>>()
+    if (base.isa(Result)) expectTypeOf(base).toMatchTypeOf<Result<string>>()
+    if (base.isa(Some)) expectTypeOf(base).toMatchTypeOf<Some<string>>()
   })
 
   test("narrowing Maybe", () => {

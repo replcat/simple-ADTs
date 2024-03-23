@@ -1,5 +1,5 @@
 type Constructors = {
-  Mystery: <T>(value: T) => Mystery<NonNullable<T>>
+  Base: <T>(value: T) => Base<NonNullable<T>>
   Maybe: <T>(value?: T) => Maybe<NonNullable<T>>
   Result: <T>(value?: T, on_null?: string | Error) => Result<NonNullable<T>>
   Some: <T>(value: NonNullable<T>) => Some<NonNullable<T>>
@@ -11,26 +11,26 @@ type Constructors = {
  * The most general type, a union of everything.
  * No (useful) runtime representation.
  */
-interface Mystery<T = unknown> {
+interface Base<T = unknown> {
   name: "Some" | "None" | "Fail"
   isa<U>(constructor: (arg?: any) => U): this is U extends Some ? Some<T>
     : U extends None ? None
     : U extends Fail ? Fail
     : U extends Maybe ? Maybe<T>
     : U extends Result ? Result<T>
-    : Mystery<T> // :3
+    : Base<T> // :3
   unwrap(): T
-  map<U>(fn: (value: T) => NonNullable<U>): Mystery<NonNullable<U>>
+  map<U>(fn: (value: T) => NonNullable<U>): Base<NonNullable<U>>
 
-  ap<U>(this: Mystery<(value: T) => U>, arg: Mystery<T>): Mystery<U>
+  ap<U>(this: Base<(value: T) => U>, arg: Base<T>): Base<U>
 
   chain<U>(fn: (value: T) => NonNullable<U>): U extends None ? None
     : U extends Fail ? Fail
     : NonNullable<U> extends Maybe<infer V> ? Maybe<V>
     : NonNullable<U> extends Result<infer V> ? Result<V>
     : NonNullable<U> extends Some<infer V> ? Some<V>
-    : NonNullable<U> extends Mystery<infer V> ? Mystery<V>
-    : Mystery<NonNullable<U>>
+    : NonNullable<U> extends Base<infer V> ? Base<V>
+    : Base<NonNullable<U>>
 
   match<JOut, NOut, FOut>(matcher: {
     Some: (value: T) => JOut
@@ -43,7 +43,7 @@ interface Mystery<T = unknown> {
  * Union of Some and None.
  * No runtime representation.
  */
-interface Maybe<T = unknown> extends Mystery<T> {
+interface Maybe<T = unknown> extends Base<T> {
   name: "Some" | "None"
   map<U>(fn: (value: T) => NonNullable<U>): Maybe<NonNullable<U>>
   match<JOut, NOut>(matcher: {
@@ -56,7 +56,7 @@ interface Maybe<T = unknown> extends Mystery<T> {
  * Union of Some and Fail.
  * No runtime representation.
  */
-interface Result<T = unknown> extends Mystery<T> {
+interface Result<T = unknown> extends Base<T> {
   name: "Some" | "Fail"
   map<U>(fn: (value: T) => NonNullable<U>): Result<NonNullable<U>>
   match<JOut, FOut>(matcher: {
@@ -69,7 +69,7 @@ interface Result<T = unknown> extends Mystery<T> {
  * A value that isn't merely hypothetical — it's right there, look.
  * Corresponds to the `Some` type at runtime.
  */
-interface Some<T = unknown> extends Mystery<T> {
+interface Some<T = unknown> extends Base<T> {
   name: "Some"
   value: NonNullable<T>
   map<U>(fn: (value: T) => NonNullable<U>): Some<NonNullable<U>>
@@ -82,7 +82,7 @@ interface Some<T = unknown> extends Mystery<T> {
  * An absent value that was optional anyway, so no big deal.
  * Corresponds to the `None` type at runtime.
  */
-interface None extends Mystery<never> {
+interface None extends Base<never> {
   name: "None"
   map<U>(fn: (value: never) => U): this
   match<NOut>(matcher: {
@@ -94,7 +94,7 @@ interface None extends Mystery<never> {
  * An absent value that *possibly* should have existed (but it depends).
  * Corresponds to the `Fail` type at runtime.
  */
-interface Fail extends Mystery<never>, Error {
+interface Fail extends Base<never>, Error {
   name: "Fail"
   error: Error
   get message(): string
@@ -112,5 +112,5 @@ type Consolidate<Union> = [Union] extends [Some<infer T>] ? Some<T>
   : [Union] extends [Fail] ? Fail
   : [Union] extends [Some<infer T> | None] ? Maybe<T>
   : [Union] extends [Some<infer T> | Fail] ? Result<T>
-  : [Union] extends [Some<infer T> | None | Fail] ? Mystery<T>
+  : [Union] extends [Some<infer T> | None | Fail] ? Base<T>
   : Union // not never, to allow other types through

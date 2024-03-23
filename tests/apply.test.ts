@@ -2,7 +2,7 @@ import { test } from "@fast-check/vitest"
 import { assert, describe, expect, expectTypeOf } from "vitest"
 
 import { constructors } from "../lib.js"
-const { Some, None, Fail, Mystery } = constructors
+const { Some, None, Fail, Base } = constructors
 
 describe("applying a function", () => {
   const stringify = Some((n: number) => String(n))
