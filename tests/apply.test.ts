@@ -28,35 +28,39 @@ describe("applying a function", () => {
   })
 })
 
-describe("applying a function", () => {
-  const stringify = Some((n: number) => String(n))
+describe("applying a function to a Maybe", () => {
+  const stringify = Maybe((n: number) => String(n))
 
-  test("to a Maybe (Some)", () => {
-    const applicative: Maybe<number> = Some(1)
+  test("(Some)", () => {
+    const applicative: Maybe<number> = Maybe(1)
     const result = applicative.ap(stringify)
 
     expect(result).toEqual(Some("1"))
     expectTypeOf(result).toMatchTypeOf<Maybe<string>>()
   })
 
-  test("to a Maybe (None)", () => {
-    const applicative: Maybe<number> = None()
+  test("(None)", () => {
+    const applicative: Maybe<number> = Maybe()
     const result = applicative.ap(stringify)
 
     expect(result).toBeInstanceOf(None)
     expectTypeOf(result).toMatchTypeOf<Maybe<string>>()
   })
+})
 
-  test("to a Result (Some)", () => {
-    const applicative: Result<number> = Some(1)
+describe("applying a function to a Result", () => {
+  const stringify = Result((n: number) => String(n))
+
+  test("(Some)", () => {
+    const applicative: Result<number> = Result(1)
     const result = applicative.ap(stringify)
 
     expect(result).toEqual(Some("1"))
     expectTypeOf(result).toMatchTypeOf<Result<string>>()
   })
 
-  test("to a Result (None)", () => {
-    const applicative: Result<number> = Fail()
+  test("(None)", () => {
+    const applicative: Result<number> = Result()
     const result = applicative.ap(stringify)
 
     expect(result).toBeInstanceOf(Fail)

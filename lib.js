@@ -45,13 +45,11 @@ const constructors = (() => {
    */
   Base.prototype.ap = function(wrapped_fn) {
     assert(wrapped_fn instanceof Base, `expected a wrapped type (got ${wrapped_fn})`)
-    if ("value" in wrapped_fn) {
-      assert(typeof wrapped_fn.value === "function", `ap expects a function (got ${wrapped_fn.value})`)
-      if ("value" in this) {
-        return this.constructor(wrapped_fn.value(this.value))
-      }
-    }
-    return None() // FIXME oh nooo, should this be a None or a Fail? it's impossible to know!
+    if (!("value" in wrapped_fn)) return wrapped_fn
+    assert(typeof wrapped_fn.value === "function", `ap expects a function (got ${wrapped_fn.value})`)
+    return ("value" in this)
+      ? this.constructor(wrapped_fn.value(this.value))
+      : this
   }
 
   /**
