@@ -40,18 +40,18 @@ const constructors = (() => {
   }
 
   /**
-   * @this {globalThis.Base<(value: T) => U>}
+   * @this {globalThis.Base<T>}
    * @type {globalThis.Base["ap"]}
    */
-  Base.prototype.ap = function(arg) {
-    if ("value" in this && "value" in arg) {
-      assert(typeof this.value === "function", `ap expects a function (got ${this.value})`)
-      const constructor_name = arg.name === "Some" ? "Some" : arg.name === "None" ? "None" : arg.name === "Fail" ? "Fail" : "Base"
-      const constructor = constructors[constructor_name]
-      return constructor(this.value(arg.value))
-    } else {
-      return "value" in this ? arg : this
+  Base.prototype.ap = function(wrapped_fn) {
+    assert(wrapped_fn instanceof Base, `expected a wrapped type (got ${wrapped_fn})`)
+    if ("value" in wrapped_fn) {
+      assert(typeof wrapped_fn.value === "function", `ap expects a function (got ${wrapped_fn.value})`)
+      if ("value" in this) {
+        return this.constructor(wrapped_fn.value(this.value))
+      }
     }
+    return None() // FIXME oh nooo, should this be a None or a Fail? it's impossible to know!
   }
 
   /**

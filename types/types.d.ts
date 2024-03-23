@@ -22,7 +22,7 @@ interface Base<T = unknown> {
   unwrap(): T
   map<U>(fn: (value: T) => NonNullable<U>): Base<NonNullable<U>>
 
-  ap<U>(this: Base<(value: T) => U>, arg: Base<T>): Base<U>
+  ap<U>(fn: Base<(value: T) => U>): Base<U>
 
   chain<U>(fn: (value: T) => NonNullable<U>): U extends None ? None
     : U extends Fail ? Fail
@@ -46,6 +46,7 @@ interface Base<T = unknown> {
 interface Maybe<T = unknown> extends Base<T> {
   name: "Some" | "None"
   map<U>(fn: (value: T) => NonNullable<U>): Maybe<NonNullable<U>>
+  ap<U>(fn: Base<(value: T) => U>): Maybe<U>
   match<JOut, NOut>(matcher: {
     Some: (value: T) => JOut
     None: () => NOut
@@ -59,6 +60,7 @@ interface Maybe<T = unknown> extends Base<T> {
 interface Result<T = unknown> extends Base<T> {
   name: "Some" | "Fail"
   map<U>(fn: (value: T) => NonNullable<U>): Result<NonNullable<U>>
+  ap<U>(fn: Base<(value: T) => U>): Result<U>
   match<JOut, FOut>(matcher: {
     Some: (value: T) => JOut
     Fail: (error: Error) => FOut
@@ -73,6 +75,7 @@ interface Some<T = unknown> extends Base<T> {
   name: "Some"
   value: NonNullable<T>
   map<U>(fn: (value: T) => NonNullable<U>): Some<NonNullable<U>>
+  ap<U>(fn: Base<(value: T) => U>): Some<U>
   match<JOut>(matcher: {
     Some: (value: T) => JOut
   }): Consolidate<JOut>
@@ -85,6 +88,7 @@ interface Some<T = unknown> extends Base<T> {
 interface None extends Base<never> {
   name: "None"
   map<U>(fn: (value: never) => U): this
+  ap<U>(fn: Base<(value: never) => U>): this
   match<NOut>(matcher: {
     None: () => NOut
   }): Consolidate<NOut>
@@ -99,6 +103,7 @@ interface Fail extends Base<never>, Error {
   error: Error
   get message(): string
   map<U>(fn: (value: never) => U): this
+  ap<U>(fn: Base<(value: never) => U>): this
   match<FOut>(matcher: {
     Fail: (error: Error) => FOut
   }): Consolidate<FOut>
