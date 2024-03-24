@@ -1,14 +1,6 @@
 /** @type {Constructors} */
-// @ts-ignore
+// @ts-ignore: the following block is not type checked
 const constructors = (() => {
-  // Note that the type safety within this block is pretty weak!
-
-  /**
-   * @this {globalThis.Base<T>}
-   * @template T
-   * @param {NonNullable<T>} value
-   * @returns {globalThis.Base<NonNullable<T>>}
-   */
   function Base(value) {
     return Some(value)
   }
@@ -19,20 +11,16 @@ const constructors = (() => {
   }
 
   // if you apply the function type to this the compiler dies :3
-  /** @this {globalThis.Base<T>} */
   Base.prototype.isa = function(constructor) {
     assert(typeof constructor === "function", `expected a constructor (got ${constructor})`)
-    if (constructor.name === "Base") return this.name === "Some" || this.name === "None" || this.name === "Fail"
-    if (constructor.name === "Maybe") return this.name === "Some" || this.name === "None"
-    if (constructor.name === "Result") return this.name === "Some" || this.name === "Fail"
-    if (constructor.name === "Box") return this.name === "Some"
+    if (constructor.name === "Base") return this["name"] === "Some" || this["name"] === "None" || this["name"] === "Fail"
+    if (constructor.name === "Maybe") return this["name"] === "Some" || this["name"] === "None"
+    if (constructor.name === "Result") return this["name"] === "Some" || this["name"] === "Fail"
+    if (constructor.name === "Box") return this["name"] === "Some"
     return this instanceof constructor
   }
 
-  /**
-   * @this {globalThis.Base<T>}
-   * @type {globalThis.Base["map"]}
-   */
+  /** @this {globalThis.Base} */
   Base.prototype.map = function(fn) {
     assert(typeof fn === "function", `map expects a function (got ${fn})`)
     return "value" in this
@@ -40,10 +28,7 @@ const constructors = (() => {
       : this
   }
 
-  /**
-   * @this {globalThis.Base<T>}
-   * @type {globalThis.Maybe<T>["ap"] | globalThis.Result<T>["ap"] | globalThis.Some<T>["ap"]}
-   */
+  /**  @this {globalThis.Base} */
   Base.prototype.ap = function(wrapped_fn) {
     assert(wrapped_fn instanceof Base, `expected a wrapped type (got ${wrapped_fn})`)
     if (!("value" in wrapped_fn)) return wrapped_fn
@@ -66,9 +51,6 @@ const constructors = (() => {
     return joined
   }
 
-  /**
-   * @type {globalThis.Maybe<T>["traverse"] | globalThis.Result<T>["traverse"] | globalThis.Some<T>["traverse"]}
-   */
   Base.prototype.traverse = function(fn) {
     assert(typeof fn === "function", `traverse expects a function (got ${fn})`)
     if (!(this instanceof Some)) return this
@@ -77,15 +59,9 @@ const constructors = (() => {
       : fn(this["value"]).map(this.constructor)
   }
 
-  /**
-   * @this {globalThis.Some<T> | globalThis.None | globalThis.Fail}
-   * @type {globalThis.Base["chain"]}
-   */
   Base.prototype.chain = function(fn) {
     assert(typeof fn === "function", `chain expects a function (got ${fn})`)
-    // @ts-ignore
     if (!(this instanceof Some)) return this
-    // @ts-ignore
     return (this["value"] instanceof Some)
       ? Some(this["value"]["chain"](fn))
       : fn(this["value"])
@@ -98,28 +74,17 @@ const constructors = (() => {
       : otherwise()
   }
 
-  /**
-   * @this {globalThis.Some<T> | globalThis.None | globalThis.Fail}
-   * @type {globalThis.Base<T>["match"]}
-   */
   Base.prototype.match = function(matcher) {
-    // @ts-ignore
     if (typeof matcher.Some === "function" && this instanceof Some) return matcher.Some(this["value"])
-    // @ts-ignore
     if (typeof matcher.None === "function" && this instanceof None) return matcher.None()
-    // @ts-ignore
     if (typeof matcher.Fail === "function" && this instanceof Fail) return matcher.Fail(this["error"])
     throw new TypeError(`No match for ${this["name"] ?? "unknown type"}`)
   }
 
-  /**
-   * @this {globalThis.Some<T> | globalThis.None | globalThis.Fail}
-   * @type {globalThis.Base<T>["unwrap"]}
-   */
   Base.prototype.unwrap = function() {
     if ("value" in this && this instanceof Some) return this.value
     if ("error" in this && this instanceof Fail) throw this.error
-    throw new TypeError(`Unwrapped an empty ${this.name}`)
+    throw new TypeError(`Unwrapped an empty ${this["name"]}`)
   }
 
   function Maybe(value) {
@@ -139,11 +104,6 @@ const constructors = (() => {
     return Some(value)
   }
 
-  /**
-   * @template T
-   * @param {NonNullable<T>} value
-   * @returns {globalThis.Some<NonNullable<T>>}
-   */
   function Some(value) {
     assert(value != null, `${Some.name}.value cannot be null or undefined.`)
     return Object.create(Some.prototype, {
@@ -155,9 +115,6 @@ const constructors = (() => {
   Some.prototype = Object.create(Base.prototype)
   Some.prototype.constructor = Some
 
-  /**
-   * @returns {globalThis.None}
-   */
   function None() {
     return Object.create(None.prototype, {
       name: { value: "None" },
@@ -167,11 +124,6 @@ const constructors = (() => {
   None.prototype = Object.create(Base.prototype)
   None.prototype.constructor = None
 
-  /**
-   * @param {string | Error} [error]
-   * @param {unknown} [cause]
-   * @returns {globalThis.Fail}
-   */
   function Fail(error, cause) {
     if (!(error instanceof Error)) {
       error = new Error(error ?? "(unspecified)")
