@@ -66,6 +66,8 @@ interface Base<T = unknown> {
     : U extends Result ? Result<T>
     : Base<T> // :3
   unwrap(): T
+  unwrap_or<U>(value: U): T | U
+  unwrap_or_else<U>(fn: () => U): T | U
   join<U>(this: U): U extends Some<Some<infer V>> ? Some<V> : U
   flatten<U>(this: U): U extends Some<infer V> ? Some<Innermost<V>> : U
   map<U>(fn: (value: T) => NonNullable<U>): Base<NonNullable<U>>

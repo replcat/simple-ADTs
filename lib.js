@@ -87,6 +87,18 @@ const constructors = (() => {
     throw new TypeError(`Unwrapped an empty ${this["name"]}`)
   }
 
+  Base.prototype.unwrap_or = function(value) {
+    if (value == null) throw new TypeError(`unwrap_or expects a value (got ${value})`)
+    if ("value" in this && this instanceof Some) return this.value
+    return value
+  }
+
+  Base.prototype.unwrap_or_else = function(fn) {
+    if (typeof fn !== "function") throw new TypeError(`unwrap_or_else expects a function (got ${fn})`)
+    if ("value" in this && this instanceof Some) return this.value
+    return fn()
+  }
+
   function Maybe(value) {
     assert(!(value instanceof Fail), `${Maybe.name} cannot be constructed with a Fail`)
     if (value instanceof None) return value
