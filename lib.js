@@ -41,7 +41,7 @@ const constructors = (() => {
 
   /**
    * @this {globalThis.Base<T>}
-   * @type {globalThis.Base["ap"]}
+   * @type {globalThis.Maybe<T>["ap"] | globalThis.Result<T>["ap"] | globalThis.Some<T>["ap"]}
    */
   Base.prototype.ap = function(wrapped_fn) {
     assert(wrapped_fn instanceof Base, `expected a wrapped type (got ${wrapped_fn})`)
@@ -52,29 +52,55 @@ const constructors = (() => {
       : this
   }
 
+  Base.prototype.join = function() {
+    return this instanceof Some && this["value"] instanceof Some ? this["value"] : this
+  }
+
+  Base.prototype.flatten = function() {
+    let joined = this
+    while (joined instanceof Some && joined["value"] instanceof Some) {
+      // @ts-ignore
+      joined = joined.join()
+    }
+    return joined
+  }
+
   /**
-   * @this {globalThis.Base<T>}
+   * @type {globalThis.Maybe<T>["traverse"] | globalThis.Result<T>["traverse"] | globalThis.Some<T>["traverse"]}
+   */
+  Base.prototype.traverse = function(fn) {
+    assert(typeof fn === "function", `traverse expects a function (got ${fn})`)
+    if (!(this instanceof Some)) return this
+    return (this["value"] instanceof Some)
+      ? Some(this["value"]["traverse"](fn))
+      : fn(this["value"]).map(this.constructor)
+  }
+
+  /**
+   * @this {globalThis.Some<T> | globalThis.None | globalThis.Fail}
    * @type {globalThis.Base["chain"]}
    */
   Base.prototype.chain = function(fn) {
     assert(typeof fn === "function", `chain expects a function (got ${fn})`)
     // @ts-ignore
-    return "value" in this
-      ? fn(this.value)
-      : this
+    if (!(this instanceof Some)) return this
+    // @ts-ignore
+    return (this["value"] instanceof Some)
+      ? Some(this["value"]["chain"](fn))
+      : fn(this["value"])
   }
 
   /**
-   * @this {globalThis.Base<T>}
+   * @this {globalThis.Some<T> | globalThis.None | globalThis.Fail}
    * @type {globalThis.Base<T>["match"]}
    */
   Base.prototype.match = function(matcher) {
     // @ts-ignore
-    if (typeof matcher.Some === "function" && this.isa(Some)) return matcher.Some(this.value)
+    if (typeof matcher.Some === "function" && this instanceof Some) return matcher.Some(this["value"])
     // @ts-ignore
-    if (typeof matcher.None === "function" && this.isa(None)) return matcher.None()
+    if (typeof matcher.None === "function" && this instanceof None) return matcher.None()
     // @ts-ignore
-    if (typeof matcher.Fail === "function" && this.isa(Fail)) return matcher.Fail(this["error"])
+    if (typeof matcher.Fail === "function" && this instanceof Fail) return matcher.Fail(this["error"])
     throw new TypeError(`No match for ${this["name"] ?? "unknown type"}`)
   }
 
@@ -83,16 +109,20 @@ const constructors = (() => {
    * @type {globalThis.Base<T>["unwrap"]}
    */
   Base.prototype.unwrap = function() {
-    if ("value" in this) return this.value
-    if ("error" in this) throw this.error
+    if ("value" in this && this instanceof Some) return this.value
+    if ("error" in this && this instanceof Fail) throw this.error
     throw new TypeError(`Unwrapped an empty ${this.name}`)
   }
 
   function Maybe(value) {
+    assert(!(value instanceof Fail), `${Maybe.name} cannot be constructed with a Fail`)
+    if (value instanceof None) return value
     return value == null ? None() : Some(value)
   }
 
   function Result(value, on_null) {
+    assert(!(value instanceof None), `${Result.name} cannot be constructed with a None`)
+    if (value instanceof Fail) return value
     return value == null ? Fail(on_null) : Some(value)
   }
 

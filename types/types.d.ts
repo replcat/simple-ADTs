@@ -1,3 +1,5 @@
+type Innermost<T> = T extends Base<infer U> ? Innermost<U> : T
+
 type Constructors = {
   Base: <T>(value: T) => Base<NonNullable<T>>
   Maybe: <T>(value?: T) => Maybe<NonNullable<T>>
@@ -20,15 +22,10 @@ interface Base<T = unknown> {
     : U extends Result ? Result<T>
     : Base<T> // :3
   unwrap(): T
+  join<U>(this: U): U extends Some<Some<infer V>> ? Some<V> : U
+  flatten<U>(this: U): U extends Some<infer V> ? Some<Innermost<V>> : U
   map<U>(fn: (value: T) => NonNullable<U>): Base<NonNullable<U>>
-  ap<U>(fn: Base<(value: T) => U>): Base<U>
-  chain<U>(fn: (value: T) => NonNullable<U>): U extends None ? None
-    : U extends Fail ? Fail
-    : NonNullable<U> extends Maybe<infer V> ? Maybe<V>
-    : NonNullable<U> extends Result<infer V> ? Result<V>
-    : NonNullable<U> extends Some<infer V> ? Some<V>
-    : NonNullable<U> extends Base<infer V> ? Base<V>
-    : Base<NonNullable<U>>
+  chain<U, F extends Base<NonNullable<U>>>(fn: (value: Innermost<T>) => F): F
   match<JOut, NOut, FOut>(matcher: {
     Some: (value: T) => JOut
     None: () => NOut
@@ -44,6 +41,7 @@ interface Maybe<T = unknown> extends Base<T> {
   name: "Some" | "None"
   map<U>(fn: (value: T) => NonNullable<U>): Maybe<NonNullable<U>>
   ap<U>(fn: Maybe<(value: T) => U>): Maybe<U>
+  traverse<U, F extends Maybe<NonNullable<U>>>(fn: (value: Innermost<T>) => F): Maybe<F>
   match<JOut, NOut>(matcher: {
     Some: (value: T) => JOut
     None: () => NOut
@@ -58,6 +56,7 @@ interface Result<T = unknown> extends Base<T> {
   name: "Some" | "Fail"
   map<U>(fn: (value: T) => NonNullable<U>): Result<NonNullable<U>>
   ap<U>(fn: Result<(value: T) => U>): Result<U>
+  traverse<U, F extends Result<NonNullable<U>>>(fn: (value: Innermost<T>) => F): Result<F>
   match<JOut, FOut>(matcher: {
     Some: (value: T) => JOut
     Fail: (error: Error) => FOut
@@ -72,6 +71,8 @@ interface Some<T = unknown> extends Base<T> {
   name: "Some"
   value: NonNullable<T>
   map<U>(fn: (value: T) => NonNullable<U>): Some<NonNullable<U>>
+  ap<U>(fn: Some<(value: T) => U>): Some<U>
+  traverse<U, F extends Some<NonNullable<U>>>(fn: (value: Innermost<T>) => F): Some<F>
   match<JOut>(matcher: {
     Some: (value: T) => JOut
   }): Consolidate<JOut>
