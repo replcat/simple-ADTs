@@ -87,15 +87,11 @@ describe("chaining over a Maybe", () => {
       const instance = Maybe(input)
       const chained = instance.chain(fn)
 
-      if (chained.isa(Some)) {
-        const actual = chained.value
-        const expected = fn(input).value
+      const actual = chained.value
+      const expected = fn(input).value
 
-        expectTypeOf(actual).toEqualTypeOf(expected)
-        expect(actual).toEqual(expected)
-      } else {
-        assert(chained.isa(None) || chained.isa(Fail))
-      }
+      expectTypeOf(actual).toEqualTypeOf(expected)
+      expect(actual).toEqual(expected)
     })
   })
 })
@@ -159,16 +155,12 @@ describe("chaining over a Some", () => {
       const instance = Some(input)
       const chained = instance.chain(fn)
 
-      if (chained.isa(Some)) {
-        const actual = chained.value
-        const expected = fn(input).value
+      const actual = chained.value
+      const expected = fn(input).value
 
-        expectTypeOf(actual).toEqualTypeOf(input)
-        expectTypeOf(actual).toEqualTypeOf(expected)
-        expect(actual).toEqual(expected)
-      } else {
-        assert(chained.isa(None) || chained.isa(Fail))
-      }
+      expectTypeOf(actual).toEqualTypeOf(input)
+      expectTypeOf(actual).toEqualTypeOf(expected)
+      expect(actual).toEqual(expected)
     })
   })
 
@@ -182,16 +174,12 @@ describe("chaining over a Some", () => {
       const instance = Some(input)
       const chained = instance.chain(fn)
 
-      if (chained.isa(Some)) {
-        const actual = chained.value
-        const expected = fn(input).value
+      const actual = chained.value
+      const expected = fn(input).value
 
-        expectTypeOf(actual).not.toEqualTypeOf(input)
-        expectTypeOf(actual).toEqualTypeOf(expected)
-        expect(actual).toEqual(expected)
-      } else {
-        assert(chained.isa(None) || chained.isa(Fail))
-      }
+      expectTypeOf(actual).not.toEqualTypeOf(input)
+      expectTypeOf(actual).toEqualTypeOf(expected)
+      expect(actual).toEqual(expected)
     })
   })
 })

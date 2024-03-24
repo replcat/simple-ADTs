@@ -16,7 +16,7 @@ describe("type transformations", () => {
   })
 
   test("reducing Maybes to a number", () => {
-    let maybes: Maybe<string>[] = [Some("one"), None(), Some("two")]
+    let maybes = [Some("one"), None(), Some("two")] as Maybe<string>[]
     let result = maybes.reduce(
       (acc, maybe) =>
         acc + maybe.match({

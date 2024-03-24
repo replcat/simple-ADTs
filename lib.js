@@ -88,21 +88,10 @@ const constructors = (() => {
     throw new TypeError(`Unwrapped an empty ${this.name}`)
   }
 
-  /**
-   * @template T
-   * @parame {T} [value]
-   * @returns {globalThis.Maybe<NonNullable<T>>}
-   */
   function Maybe(value) {
     return value == null ? None() : Some(value)
   }
 
-  /**
-   * @template T
-   * @param {T} value
-   * @param {string | Error} [on_null]
-   * @returns {globalThis.Result<NonNullable<T>>}
-   */
   function Result(value, on_null) {
     return value == null ? Fail(on_null) : Some(value)
   }
