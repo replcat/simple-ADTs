@@ -2,7 +2,7 @@ import { fc, test } from "@fast-check/vitest"
 import { assert, describe, expect, expectTypeOf } from "vitest"
 
 import { constructors } from "../lib.js"
-const { Base, Maybe, Result, Some, None, Fail } = constructors
+const { Base, Box, Maybe, Result, Some, None, Fail } = constructors
 
 describe("the Some constructor", () => {
   test.prop([
@@ -55,6 +55,13 @@ describe("the Fail constructor", () => {
     } else {
       expect(instance.error.message).toBe(error)
     }
+  })
+})
+
+describe("the Box constructor", () => {
+  test("creates Box-typed instances", () => {
+    let box = Box("blep")
+    expectTypeOf(box).toMatchTypeOf<Box<string>>()
   })
 })
 
@@ -116,6 +123,13 @@ describe("type-level tests", () => {
     if (base.isa(Maybe)) expectTypeOf(base).toMatchTypeOf<Maybe<string>>()
     if (base.isa(Result)) expectTypeOf(base).toMatchTypeOf<Result<string>>()
     if (base.isa(Some)) expectTypeOf(base).toMatchTypeOf<Some<string>>()
+  })
+
+  test("narrowing Box", () => {
+    const box = Box("test")
+
+    if (box.isa(Box)) expectTypeOf(box).toMatchTypeOf<Box<string>>()
+    if (box.isa(Some)) expectTypeOf(box).toMatchTypeOf<Some<string>>()
   })
 
   test("narrowing Maybe", () => {

@@ -25,6 +25,7 @@ const constructors = (() => {
     if (constructor.name === "Base") return this.name === "Some" || this.name === "None" || this.name === "Fail"
     if (constructor.name === "Maybe") return this.name === "Some" || this.name === "None"
     if (constructor.name === "Result") return this.name === "Some" || this.name === "Fail"
+    if (constructor.name === "Box") return this.name === "Some"
     return this instanceof constructor
   }
 
@@ -90,6 +91,13 @@ const constructors = (() => {
       : fn(this["value"])
   }
 
+  Base.prototype.fold = function(on_some, otherwise) {
+    if (this instanceof Some) return on_some(this["value"])
+    return "error" in this
+      ? otherwise(this["error"])
+      : otherwise()
+  }
+
   /**
    * @this {globalThis.Some<T> | globalThis.None | globalThis.Fail}
    * @type {globalThis.Base<T>["match"]}
@@ -124,6 +132,11 @@ const constructors = (() => {
     assert(!(value instanceof None), `${Result.name} cannot be constructed with a None`)
     if (value instanceof Fail) return value
     return value == null ? Fail(on_null) : Some(value)
+  }
+
+  function Box(value) {
+    assert(value != null, `${Box.name}.value cannot be null or undefined.`)
+    return Some(value)
   }
 
   /**
@@ -175,8 +188,22 @@ const constructors = (() => {
   Fail.prototype = Object.create(Base.prototype)
   Fail.prototype.constructor = Fail
 
+  const delegate_to_instance = method => (...params) => instance =>
+    method in instance
+      ? instance[method](...params)
+      : instance
+
+  // methods which can be called independently via the type constructors
+  const standalone_methods = ["ap", "chain", "flatten", "join", "map", "traverse", "fold", "match"]
+  for (const method of standalone_methods) {
+    Box[method] = delegate_to_instance(method)
+    Maybe[method] = delegate_to_instance(method)
+    Result[method] = delegate_to_instance(method)
+  }
+
   return {
     Base,
+    Box,
     Maybe,
     Result,
     Some,
