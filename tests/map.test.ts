@@ -148,3 +148,179 @@ describe("type-level tests", () => {
     expectTypeOf(mapped).toMatchTypeOf<Fail>()
   })
 })
+
+describe("mapping over a Maybe", () => {
+  describe("with a type-preserving function", () => {
+    const it = test.prop({
+      input: nonnullable(fc.string()),
+      fn: fc.constantFrom((value: string) => value),
+    })
+
+    it("returns the expected value and type", ({ input, fn }) => {
+      const instance = Maybe(input)
+      const mapped = instance.map(fn)
+
+      if (mapped.isa(Some)) {
+        const actual = mapped.value
+        const expected = fn(input)
+
+        expectTypeOf(actual).toEqualTypeOf(input)
+        expectTypeOf(actual).toEqualTypeOf(expected)
+        expect(actual).toEqual(expected)
+      } else {
+        assert(mapped.isa(None) || mapped.isa(Fail))
+      }
+    })
+  })
+
+  describe("with a type-modifying function", () => {
+    const it = test.prop({
+      input: nonnullable(fc.float()),
+      fn: fc.constantFrom((value: number) => String(value)),
+    })
+
+    it("returns the expected value and type", ({ input, fn }) => {
+      const instance = Maybe(input)
+      const mapped = instance.map(fn)
+
+      if (mapped.isa(Some)) {
+        const actual = mapped.value
+        const expected = fn(input)
+
+        expectTypeOf(actual).not.toEqualTypeOf(input)
+        expectTypeOf(actual).toEqualTypeOf(expected)
+        expect(actual).toEqual(expected)
+      } else {
+        assert(mapped.isa(None) || mapped.isa(Fail))
+      }
+    })
+  })
+})
+
+describe("mapping over a Result", () => {
+  describe("with a type-preserving function", () => {
+    const it = test.prop({
+      input: nonnullable(fc.string()),
+      fn: fc.constantFrom((value: string) => value),
+    })
+
+    it("returns the expected value and type", ({ input, fn }) => {
+      const instance = Result(input)
+      const mapped = instance.map(fn)
+
+      if (mapped.isa(Some)) {
+        const actual = mapped.value
+        const expected = fn(input)
+
+        expectTypeOf(actual).toEqualTypeOf(input)
+        expectTypeOf(actual).toEqualTypeOf(expected)
+        expect(actual).toEqual(expected)
+      } else {
+        assert(mapped.isa(Fail))
+      }
+    })
+  })
+
+  describe("with a type-modifying function", () => {
+    const it = test.prop({
+      input: nonnullable(fc.float()),
+      fn: fc.constantFrom((value: number) => String(value)),
+    })
+
+    it("returns the expected value and type", ({ input, fn }) => {
+      const instance = Result(input)
+      const mapped = instance.map(fn)
+
+      if (mapped.isa(Some)) {
+        const actual = mapped.value
+        const expected = fn(input)
+
+        expectTypeOf(actual).not.toEqualTypeOf(input)
+        expectTypeOf(actual).toEqualTypeOf(expected)
+        expect(actual).toEqual(expected)
+      } else {
+        assert(mapped.isa(Fail))
+      }
+    })
+  })
+})
+
+describe("mapping over a Some", () => {
+  describe("with a type-preserving function", () => {
+    const it = test.prop({
+      input: nonnullable(fc.string()),
+      fn: fc.constantFrom((value: string) => value),
+    })
+
+    it("returns the expected value and type", ({ input, fn }) => {
+      const instance = Some(input)
+      const mapped = instance.map(fn)
+
+      if (mapped.isa(Some)) {
+        const actual = mapped.value
+        const expected = fn(input)
+
+        expectTypeOf(actual).toEqualTypeOf(input)
+        expectTypeOf(actual).toEqualTypeOf(expected)
+        expect(actual).toEqual(expected)
+      } else {
+        expect.unreachable()
+      }
+    })
+  })
+
+  describe("with a type-modifying function", () => {
+    const it = test.prop({
+      input: nonnullable(fc.float()),
+      fn: fc.constantFrom((value: number) => String(value)),
+    })
+
+    it("returns the expected value and type", ({ input, fn }) => {
+      const instance = Some(input)
+      const mapped = instance.map(fn)
+
+      if (mapped.isa(Some)) {
+        const actual = mapped.value
+        const expected = fn(input)
+
+        expectTypeOf(actual).not.toEqualTypeOf(input)
+        expectTypeOf(actual).toEqualTypeOf(expected)
+        expect(actual).toEqual(expected)
+      } else {
+        expect.unreachable()
+      }
+    })
+  })
+})
+
+describe("mapping over a None", () => {
+  describe("with a type-preserving function", () => {
+    const it = test.prop({
+      input: nonnullable(fc.string()),
+      fn: fc.constantFrom((_: string) => None()),
+    })
+
+    it("returns a None", ({ fn }) => {
+      const instance = None()
+      const mapped = instance.map(fn)
+
+      expectTypeOf(mapped).toEqualTypeOf(instance)
+      assert(mapped.isa(None))
+    })
+  })
+
+  describe("with a type-modifying function", () => {
+    const it = test.prop({
+      input: nonnullable(fc.float()),
+      fn: fc.constantFrom((_: number) => None()),
+    })
+
+    it("returns a None", ({ fn }) => {
+      const instance = None()
+      const mapped = instance.map(fn)
+
+      expectTypeOf(mapped).toEqualTypeOf(instance)
+      assert(mapped.isa(None))
+    })
+  })
+})
