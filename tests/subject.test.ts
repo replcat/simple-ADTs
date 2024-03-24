@@ -4,7 +4,7 @@ const { fn } = vi
 import { constructors } from "../lib.js"
 const { Subject, Maybe, Result, Some, None, Fail } = constructors
 
-describe("Subject", () => {
+describe("constructor and basic usage", () => {
   describe("subscribe", () => {
     it("calls the subscriber's next function when a value is emitted", () => {
       const subject = Subject()
@@ -69,6 +69,117 @@ describe("Subject", () => {
       subject.complete()
 
       expect(complete).toHaveBeenCalledTimes(1)
+    })
+  })
+})
+
+describe("methods", () => {
+  describe("map", () => {
+    it("transforms emitted values", () => {
+      const subject = Subject()
+
+      const next = fn()
+      subject.subscribe({ next, complete: () => {} })
+
+      const mapped = subject.map(String)
+      expectTypeOf(mapped).toMatchTypeOf<Subject<string>>()
+
+      const next_mapped = fn()
+      mapped.subscribe({ next: next_mapped, complete: () => {} })
+
+      subject.next(1)
+
+      expect(next).toHaveBeenCalledWith(1)
+      expect(next_mapped).toHaveBeenCalledWith("1")
+    })
+  })
+
+  describe("filter", () => {
+    it("only emits values which satisfy the predicate", () => {
+      const subject = Subject() as Subject<number>
+
+      const next = fn()
+      subject.subscribe({ next, complete: () => {} })
+
+      const is_even = (value: number) => value % 2 === 0
+      const filtered = subject.filter(is_even)
+
+      const next_filtered = fn()
+      filtered.subscribe({ next: next_filtered, complete: () => {} })
+
+      for (let i = 1; i <= 5; i++) {
+        subject.next(i)
+      }
+
+      expect(next.mock.calls).toEqual([[1], [2], [3], [4], [5]])
+      expect(next_filtered.mock.calls).toEqual([[2], [4]])
+    })
+
+    it("narrows the type if the predicate is a type guard", () => {
+      const subject = Subject() as Subject<number | string>
+
+      const is_string = (value: unknown): value is string => typeof value === "string"
+      const filtered = subject.filter(is_string)
+
+      const next = fn()
+      filtered.subscribe({ next, complete: () => {} })
+
+      subject.next(1)
+      subject.next("hello")
+
+      expect(next).toHaveBeenCalledWith("hello")
+      expect(next).not.toHaveBeenCalledWith(1)
+
+      expectTypeOf(filtered).toMatchTypeOf<Subject<string>>()
+    })
+
+    it("can be used to narrow Maybe to Some", () => {
+      const subject = Subject() as Subject<Maybe<number>>
+
+      const filtered_isa = subject.filter(m => m.isa(Some))
+
+      const next_isa = fn()
+      filtered_isa.subscribe({ next: next_isa, complete: () => {} })
+
+      const is_some = (value: unknown): value is Some<number> => value instanceof Some
+      const filtered_custom = subject.filter(is_some)
+
+      const next_custom = fn()
+      filtered_custom.subscribe({ next: next_custom, complete: () => {} })
+
+      subject.next(Maybe())
+      subject.next(Maybe(1))
+
+      expect(next_isa).toHaveBeenCalledWith(Maybe(1))
+      expect(next_isa).not.toHaveBeenCalledWith(Maybe())
+
+      expect(next_custom).toHaveBeenCalledWith(Maybe(1))
+      expect(next_custom).not.toHaveBeenCalledWith(Maybe())
+
+      // FIXME can't filter ADTs on type guards :(
+      // @ts-expect-error
+      expectTypeOf(filtered_isa).toMatchTypeOf<Subject<Some<number>>>()
+      // @ts-expect-error
+      expectTypeOf(filtered_custom).toMatchTypeOf<Subject<Some<number>>>()
+    })
+  })
+
+  describe("merge", () => {
+    it("emits values from both subjects", () => {
+      const subject_of_number = Subject() as Subject<number>
+      const subject_of_string = Subject() as Subject<string>
+
+      const merged = subject_of_number.merge(subject_of_string)
+      expectTypeOf(merged).toMatchTypeOf<Subject<number | string>>()
+
+      const next = fn()
+      merged.subscribe({ next, complete: () => {} })
+
+      subject_of_number.next(1)
+      expect(next).toHaveBeenCalledWith(1)
+
+      subject_of_string.next("two")
+      expect(next).toHaveBeenCalledWith("two")
     })
   })
 })

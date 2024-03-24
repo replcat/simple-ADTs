@@ -82,22 +82,6 @@ interface Base<T = unknown> {
   }): Consolidate<JOut | NOut | FOut>
 }
 
-interface Subscriber<T> {
-  next: (value: T) => void
-  complete: () => void
-}
-
-interface Subject<T = unknown> {
-  name: "Subject"
-  subscribers: Subscriber<T>[]
-  value?: T
-  is_completed: boolean
-
-  subscribe: (subscriber: Subscriber<T>) => void
-  next: (value: T) => void
-  complete: () => void
-}
-
 /**
  * Definitely contains a value.
  * Just a Some at runtime.
@@ -197,3 +181,26 @@ type Consolidate<Union> = [Union] extends [Some<infer T>] ? Some<T>
   : [Union] extends [Some<infer T> | Fail] ? Result<T>
   : [Union] extends [Some<infer T> | None | Fail] ? Base<T>
   : Union // not never, to allow other types through
+
+interface Subscriber<T> {
+  next: (value: T) => void
+  complete: () => void
+}
+
+interface Subject<T = unknown> {
+  name: "Subject"
+  subscribers: Subscriber<T>[]
+  value?: T
+  is_completed: boolean
+
+  subscribe: (subscriber: Subscriber<T>) => void
+  next: (value: T) => void
+  complete: () => void
+
+  // overload to support narrowing if the predicate is a type guard
+  filter<U extends T>(predicate: (value: T) => value is U): Subject<U>
+  filter(predicate: (value: T) => boolean): Subject<T>
+
+  map: <U>(fn: (value: T) => U) => Subject<U>
+  merge: <U>(other: Subject<U>) => Subject<T | U>
+}

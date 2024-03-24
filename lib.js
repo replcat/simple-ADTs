@@ -206,6 +206,41 @@ const constructors = (() => {
     }
   }
 
+  Subject.prototype.map = function(fn) {
+    const new_subject = Subject()
+    this.subscribe({
+      next: value => new_subject.next(fn(value)),
+      complete: () => new_subject.complete(),
+    })
+    return new_subject
+  }
+
+  Subject.prototype.filter = function(predicate) {
+    const new_subject = Subject()
+    this.subscribe({
+      next: value => {
+        if (predicate(value)) {
+          new_subject.next(value)
+        }
+      },
+      complete: () => new_subject.complete(),
+    })
+    return new_subject
+  }
+
+  Subject.prototype.merge = function(other) {
+    const new_subject = Subject()
+    this.subscribe({
+      next: value => new_subject.next(value),
+      complete: () => new_subject.complete(),
+    })
+    other.subscribe({
+      next: value => new_subject.next(value),
+      complete: () => new_subject.complete(),
+    })
+    return new_subject
+  }
+
   return {
     Base,
     Box,

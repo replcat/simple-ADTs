@@ -1,6 +1,7 @@
 {
   "lineWidth": 200,
   "typescript": {
+    "arrowFunction.useParentheses": "preferNone",
     "semiColons": "asi"
   },
   "includes": [
