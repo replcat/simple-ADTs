@@ -165,6 +165,47 @@ const constructors = (() => {
     Result[method] = delegate_to_instance(method)
   }
 
+  function Subject(value) {
+    if (!(this instanceof Subject)) return new Subject(value)
+    this.name = "Subject"
+    this.subscribers = []
+    this.value = value
+    this.is_completed = false
+  }
+
+  Subject.prototype = Object.create(Base.prototype)
+  Subject.prototype.constructor = Subject
+
+  Subject.prototype.subscribe = function(subscriber) {
+    assert(typeof subscriber === "object", `subscribe expects an object (got ${subscriber})`)
+    assert(typeof subscriber.next === "function", `subscriber.next must be a function (got ${subscriber.next})`)
+    assert(typeof subscriber.complete === "function", `subscriber.complete must be a function (got ${subscriber.complete})`)
+    if (!this.is_completed) {
+      this.subscribers?.push(subscriber)
+      if (this.value !== undefined) {
+        subscriber.next(this.value)
+      }
+    } else {
+      subscriber.complete()
+    }
+  }
+
+  Subject.prototype.next = function(value) {
+    assert(value != null, `next expects a value (got ${value})`)
+    if (!this.is_completed) {
+      this.value = value
+      this.subscribers?.forEach(subscriber => subscriber.next(value))
+    }
+  }
+
+  Subject.prototype.complete = function() {
+    if (!this.is_completed) {
+      this.is_completed = true
+      this.subscribers?.forEach(subscriber => subscriber.complete())
+      this.subscribers = []
+    }
+  }
+
   return {
     Base,
     Box,
@@ -173,6 +214,7 @@ const constructors = (() => {
     Some,
     None,
     Fail,
+    Subject,
   }
 })()
 

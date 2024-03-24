@@ -50,6 +50,8 @@ type Constructors = {
   Some: <T>(value: NonNullable<T>) => Some<NonNullable<T>>
   None: () => None
   Fail: (error?: string | Error, cause?: unknown) => Fail
+
+  Subject: <T>(value?: T) => Subject<T>
 }
 
 /**
@@ -78,6 +80,22 @@ interface Base<T = unknown> {
     None: () => NOut
     Fail: (error: Error) => FOut
   }): Consolidate<JOut | NOut | FOut>
+}
+
+interface Subscriber<T> {
+  next: (value: T) => void
+  complete: () => void
+}
+
+interface Subject<T = unknown> {
+  name: "Subject"
+  subscribers: Subscriber<T>[]
+  value?: T
+  is_completed: boolean
+
+  subscribe: (subscriber: Subscriber<T>) => void
+  next: (value: T) => void
+  complete: () => void
 }
 
 /**
