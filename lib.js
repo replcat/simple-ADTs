@@ -16,7 +16,6 @@ const constructors = (() => {
     if (constructor.name === "Base") return this["name"] === "Some" || this["name"] === "None" || this["name"] === "Fail"
     if (constructor.name === "Maybe") return this["name"] === "Some" || this["name"] === "None"
     if (constructor.name === "Result") return this["name"] === "Some" || this["name"] === "Fail"
-    if (constructor.name === "Box") return this["name"] === "Some"
     return this instanceof constructor
   }
 
@@ -111,11 +110,6 @@ const constructors = (() => {
     return value == null ? Fail(on_null) : Some(value)
   }
 
-  function Box(value) {
-    assert(value != null, `${Box.name}.value cannot be null or undefined.`)
-    return Some(value)
-  }
-
   function Some(value) {
     assert(value != null, `${Some.name}.value cannot be null or undefined.`)
     return Object.create(Some.prototype, {
@@ -160,7 +154,6 @@ const constructors = (() => {
   // methods which can be called independently via the type constructors
   const standalone_methods = ["ap", "chain", "flatten", "join", "map", "traverse", "fold", "match"]
   for (const method of standalone_methods) {
-    Box[method] = delegate_to_instance(method)
     Maybe[method] = delegate_to_instance(method)
     Result[method] = delegate_to_instance(method)
   }
@@ -243,7 +236,6 @@ const constructors = (() => {
 
   return {
     Base,
-    Box,
     Maybe,
     Result,
     Some,

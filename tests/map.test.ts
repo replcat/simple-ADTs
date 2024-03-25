@@ -3,7 +3,7 @@ import { assert, describe, expect, expectTypeOf } from "vitest"
 import { nonnullable_functions, nonnullable_values } from "./helpers/arbitraries.js"
 
 import { constructors } from "../lib.js"
-const { Base, Box, Maybe, Result, Some, None, Fail } = constructors
+const { Base, Maybe, Result, Some, None, Fail } = constructors
 
 function nonnullable<T>(t: fc.Arbitrary<T>): fc.Arbitrary<NonNullable<T>> {
   return t.filter(value => value != null) as fc.Arbitrary<NonNullable<T>>
@@ -104,13 +104,6 @@ describe("type-level tests", () => {
     const mapped = base.map(value => value.length)
 
     if (mapped.isa(Base)) expectTypeOf(mapped).toMatchTypeOf<Base<number>>()
-  })
-
-  test("mapping over Box", () => {
-    const box = Box("test")
-    const mapped = box.map(value => value.length)
-
-    if (mapped.isa(Box)) expectTypeOf(mapped).toMatchTypeOf<Box<number>>()
   })
 
   test("mapping over Maybe", () => {

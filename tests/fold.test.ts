@@ -1,15 +1,7 @@
 import { assert, describe, expect, expectTypeOf, test } from "vitest"
 
 import { constructors } from "../lib.js"
-const { Box, Maybe, Result, Some, None, Fail } = constructors
-
-test("Box", () => {
-  const box = Box(1)
-  const result = box.fold(value => String(value))
-
-  expectTypeOf(result).toEqualTypeOf<string>()
-  expect(result).toBe("1")
-})
+const { Maybe, Result, Some, None, Fail } = constructors
 
 test("Maybe of Some", () => {
   const maybe = Maybe(1)

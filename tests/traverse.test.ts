@@ -4,6 +4,16 @@ import { assert, describe, expect, expectTypeOf } from "vitest"
 import { constructors } from "../lib.js"
 const { Base, Maybe, Result, Some, None, Fail } = constructors
 
+test("traversing a Some", () => {
+  const stringify = (n: number) => Some(String(n))
+
+  const traversable: Some<number> = Some(1)
+  const result = traversable.traverse(stringify)
+
+  expectTypeOf(result).toMatchTypeOf<Some<Some<string>>>()
+  expect(result).toEqual(Some(Some("1")))
+})
+
 describe("traversing a Maybe", () => {
   const stringify = (n: number) => Maybe(String(n))
 

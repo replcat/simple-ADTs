@@ -2,35 +2,12 @@ import { fc, test } from "@fast-check/vitest"
 import { assert, describe, expect, expectTypeOf } from "vitest"
 
 import { constructors } from "../lib.js"
-const { Box, Maybe, Result, Some, None, Fail } = constructors
+const { Maybe, Result, Some, None, Fail } = constructors
 
-const B = Box
 const M = Maybe
 const R = Result
 
 describe("join and flatten", () => {
-  describe("Box", () => {
-    const boxes = [
-      Box(1),
-      Box(Box(2)),
-      Box(Box(Box(3))),
-    ] as Box<Box<Box<number>>>[]
-
-    test("join", () => {
-      const join = B.join()
-      const result = boxes.map(join)
-      expectTypeOf(result).toMatchTypeOf<Box<Box<number>>[]>()
-      expect(result).toEqual([Box(1), Box(2), Box(Box(3))])
-    })
-
-    test("flatten", () => {
-      const flatten = B.flatten()
-      const result = boxes.map(flatten)
-      expectTypeOf(result).toMatchTypeOf<Box<number>[]>()
-      expect(result).toEqual([Box(1), Box(2), Box(3)])
-    })
-  })
-
   describe("Maybe", () => {
     const maybe_maybe_maybes = [
       Maybe(),
@@ -79,16 +56,6 @@ describe("join and flatten", () => {
 })
 
 describe("map", () => {
-  test("Box", () => {
-    const boxes = [Box(1), Box(2)] as Box<number>[]
-
-    const stringify = B.map((n: number) => String(n))
-    const result = boxes.map(stringify)
-
-    expectTypeOf(result).toMatchTypeOf<Box<string>[]>()
-    expect(result).toEqual([Box("1"), Box("2")])
-  })
-
   test("Maybe", () => {
     const maybes = [Maybe(), Maybe(1), Maybe(2)] as Maybe<number>[]
 
@@ -111,16 +78,6 @@ describe("map", () => {
 })
 
 describe("chain", () => {
-  test("Box", () => {
-    const boxes = [Box(1), Box(2)] as Box<number>[]
-
-    const stringify = B.chain((n: number) => Box(String(n)))
-    const result = boxes.map(stringify)
-
-    expectTypeOf(result).toMatchTypeOf<Box<string>[]>()
-    expect(result).toEqual([Box("1"), Box("2")])
-  })
-
   test("Maybe", () => {
     const maybes = [Maybe(), Maybe(1), Maybe(2)] as Maybe<number>[]
 
@@ -143,16 +100,6 @@ describe("chain", () => {
 })
 
 describe("ap", () => {
-  test("Box", () => {
-    const boxes = [Box(1), Box(2)] as Box<number>[]
-
-    const stringify = B.ap(Box((n: number) => String(n)))
-    const result = boxes.map(stringify)
-
-    expectTypeOf(result).toMatchTypeOf<Box<string>[]>()
-    expect(result).toEqual([Box("1"), Box("2")])
-  })
-
   test("Maybe", () => {
     const maybes = [Maybe(), Maybe(1), Maybe(2)] as Maybe<number>[]
 
@@ -175,17 +122,6 @@ describe("ap", () => {
 })
 
 describe("traverse", () => {
-  test("Box", () => {
-    const boxes = [Box(1), Box(2)] as Box<number>[]
-
-    const result = boxes
-      .map(B.traverse(n => Box(String(n))))
-      .map(B.flatten())
-
-    expectTypeOf(result).toMatchTypeOf<Box<string>[]>()
-    expect(result).toEqual([Box("1"), Box("2")])
-  })
-
   test("Maybe", () => {
     const maybes = [Maybe(), Maybe(1), Maybe(2)] as Maybe<number>[]
 
@@ -210,17 +146,6 @@ describe("traverse", () => {
 })
 
 describe("fold", () => {
-  test("Box", () => {
-    const boxes = [Box(1), Box(2)] as Box<number>[]
-    const fold = B.fold((n: number) => String(n))
-    const result = boxes
-      .map(fold)
-      .reduce((a, b) => a + b, "")
-
-    expectTypeOf(result).toMatchTypeOf<string>()
-    expect(result).toBe("12")
-  })
-
   test("Maybe", () => {
     const maybes = [Maybe(), Maybe(1), Maybe(2)] as Maybe<number>[]
 

@@ -3,18 +3,6 @@ type Innermost<T> = T extends Base<infer U> ? Innermost<U> : T
 type Constructors = {
   Base: <T>(value: T) => Base<NonNullable<T>>
 
-  Box:
-    & (<T>(value: T) => Box<NonNullable<T>>)
-    & {
-      ap: <T, U>(fn: Box<(value: T) => U>) => (box: Box<T>) => Box<U>
-      chain: <T, F extends Box<any>>(fn: (value: Innermost<T>) => F) => (box: Box<T>) => F
-      flatten: () => <T>(box: Box<T>) => Box<Innermost<T>>
-      join: () => <T>(box: Box<Box<T>>) => Box<T>
-      map: <T, U>(fn: (value: T) => U) => (box: Box<T>) => Box<U>
-      traverse: <T, F extends Box<any>>(fn: (value: T) => F) => (box: Box<T>) => Box<F>
-      fold: <T, U>(fn: (value: T) => U) => (box: Box<T>) => U
-    }
-
   Maybe:
     & (<T>(value?: T) => Maybe<NonNullable<T>>)
     & {
@@ -47,8 +35,20 @@ type Constructors = {
       }) => (result: Result<T>) => F
     }
 
-  Some: <T>(value: NonNullable<T>) => Some<NonNullable<T>>
+  Some:
+    & (<T>(value: NonNullable<T>) => Some<NonNullable<T>>)
+    & {
+      ap: <T, U>(fn: Some<(value: T) => U>) => (Some: Some<T>) => Some<U>
+      chain: <T, F extends Some<any>>(fn: (value: Innermost<T>) => F) => (Some: Some<T>) => F
+      flatten: () => <T>(Some: Some<T>) => Some<Innermost<T>>
+      join: () => <T>(Some: Some<Some<T>>) => Some<T>
+      map: <T, U>(fn: (value: T) => U) => (Some: Some<T>) => Some<U>
+      traverse: <T, F extends Some<any>>(fn: (value: T) => F) => (Some: Some<T>) => Some<F>
+      fold: <T, U>(fn: (value: T) => U) => (Some: Some<T>) => U
+    }
+
   None: () => None
+
   Fail: (error?: string | Error, cause?: unknown) => Fail
 
   Subject: <T>(value?: T) => Subject<T>
@@ -63,7 +63,6 @@ interface Base<T> {
   isa<U>(constructor: (arg?: any) => U): this is U extends Some ? Some<T>
     : U extends None ? None
     : U extends Fail ? Fail
-    : U extends Box ? Box<T>
     : U extends Maybe ? Maybe<T>
     : U extends Result ? Result<T>
     : Base<T> // :3
@@ -75,11 +74,7 @@ interface Base<T> {
   chain<U, F extends Base<NonNullable<U>>>(fn: (value: Innermost<T>) => F): F
   fold<U, E>(on_value: (value?: T) => U, otherwise?: (error: Error) => E): U | E
 
-  // methods signatures which need to identify their particular variant...
-  // (note: Box comes first because it's indistinguishable from Some)
-
-  map<U>(fn: (value: T) => NonNullable<U>): this extends Box<T> ? Box<NonNullable<U>>
-    : this extends Some<T> ? Some<NonNullable<U>>
+  map<U>(fn: (value: T) => NonNullable<U>): this extends Some<T> ? Some<NonNullable<U>>
     : this extends None ? None
     : this extends Fail ? Fail
     : this extends Maybe<T> ? Maybe<NonNullable<U>>
@@ -88,11 +83,17 @@ interface Base<T> {
 
   ap<V extends Base<(value: T) => any>>(this: Base<T>, fn: V): V extends Maybe<(value: T) => any> ? Maybe<WrappedReturn<V>>
     : V extends Result<(value: T) => any> ? Result<WrappedReturn<V>>
-    : V extends Box<(value: T) => any> ? Box<WrappedReturn<V>>
     : V extends Some<(value: T) => any> ? Some<WrappedReturn<V>>
     : V extends None ? None
     : V extends Fail ? Fail
     : Base<WrappedReturn<V>>
+
+  traverse<U, F extends Base<NonNullable<U>>>(fn: (value: Innermost<T>) => F): this extends Some<T> ? Some<F>
+    : this extends None ? None
+    : this extends Fail ? Fail
+    : this extends Maybe<T> ? Maybe<F>
+    : this extends Result<T> ? Result<F>
+    : Base<F>
 
   match<Sout = never, NOut = never, FOut = never>(matcher: Matcher<this, T, Sout, NOut, FOut>): Consolidate<
     this extends Maybe<T> ? Sout | NOut
@@ -126,12 +127,6 @@ type Consolidate<Union> = [Union] extends [Some<infer T>] ? Some<T>
   : Union // not never, to allow other types through
 
 /**
- * Definitely contains a value.
- * Just a Some at runtime.
- */
-type Box<T = unknown> = Some<T>
-
-/**
  * Union of Some and None.
  * No runtime representation.
  */
@@ -150,7 +145,6 @@ type Result<T = unknown> = Some<T> | Fail<T>
 interface Some<T = unknown> extends Base<T> {
   name: "Some"
   value: NonNullable<T>
-  traverse<U, F extends Some<NonNullable<U>>>(fn: (value: Innermost<T>) => F): Some<F>
   fold<U>(fn: (value: T) => U): U
 }
 
