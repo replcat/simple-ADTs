@@ -146,18 +146,32 @@ const constructors = (() => {
   Fail.prototype = Object.create(Base.prototype)
   Fail.prototype.constructor = Fail
 
-  const delegate_to_instance = method => (...params) => instance =>
+  const standalone_delegated = method => (...params) => instance =>
     method in instance
       ? instance[method](...params)
       : instance
 
-  // methods which can be called independently via the type constructors
-  const standalone_methods = ["ap", "chain", "flatten", "join", "map", "traverse", "fold", "match"]
-  for (const method of standalone_methods) {
-    Some[method] = delegate_to_instance(method)
-    Maybe[method] = delegate_to_instance(method)
-    Result[method] = delegate_to_instance(method)
+  const delegated_methods = ["ap", "chain", "map", "traverse", "fold", "match"]
+  for (const method of delegated_methods) {
+    Some[method] = standalone_delegated(method)
+    Maybe[method] = standalone_delegated(method)
+    Result[method] = standalone_delegated(method)
   }
+
+  const standalone_isa = constructor => instance => instance.isa(constructor)
+  Some.isa = standalone_isa(Some)
+  None.isa = standalone_isa(None)
+  Fail.isa = standalone_isa(Fail)
+  Maybe.isa = standalone_isa(Maybe)
+  Result.isa = standalone_isa(Result)
+
+  const standalone_noargs = method => instance => instance[method]()
+  Some.join = standalone_noargs("join")
+  Some.flatten = standalone_noargs("flatten")
+  Maybe.join = standalone_noargs("join")
+  Maybe.flatten = standalone_noargs("flatten")
+  Result.join = standalone_noargs("join")
+  Result.flatten = standalone_noargs("flatten")
 
   function Subject(value) {
     if (!(this instanceof Subject)) return new Subject(value)

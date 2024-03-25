@@ -2,7 +2,7 @@ import { assert, describe, expect, expectTypeOf, it, test, vi } from "vitest"
 const { fn } = vi
 
 import { constructors } from "../lib.js"
-const { Subject, Maybe, Result, Some, None, Fail } = constructors
+const { Subject, Base, Maybe, Result, Some, None, Fail } = constructors
 
 describe("constructor and basic usage", () => {
   describe("subscribe", () => {
@@ -133,32 +133,38 @@ describe("methods", () => {
       expectTypeOf(filtered).toMatchTypeOf<Subject<string>>()
     })
 
-    it("can be used to narrow Maybe to Some", () => {
+    it("can be used to narrow Maybe to Some (with Some.isa)", () => {
       const subject = Subject() as Subject<Maybe<number>>
+      const filtered = subject.filter(Some.isa)
 
-      const filtered_isa = subject.filter(m => m.isa(Some))
-
-      const next_isa = fn()
-      filtered_isa.subscribe({ next: next_isa, complete: () => {} })
-
-      const is_some = (value: unknown): value is Some<number> => value instanceof Some
-      const filtered_custom = subject.filter(is_some)
-
-      const next_custom = fn()
-      filtered_custom.subscribe({ next: next_custom, complete: () => {} })
+      const next = fn()
+      filtered.subscribe({ next, complete: () => {} })
 
       subject.next(Maybe())
       subject.next(Maybe(1))
 
-      expect(next_isa).toHaveBeenCalledWith(Maybe(1))
-      expect(next_isa).not.toHaveBeenCalledWith(Maybe())
+      expect(next).toHaveBeenCalledWith(Maybe(1))
+      expect(next).not.toHaveBeenCalledWith(Maybe())
 
-      expect(next_custom).toHaveBeenCalledWith(Maybe(1))
-      expect(next_custom).not.toHaveBeenCalledWith(Maybe())
+      expectTypeOf(filtered).toMatchTypeOf<Subject<Some<number>>>() // fails
+    })
 
-      // FIXME can't filter ADTs on type guards :(
-      expectTypeOf(filtered_isa).toMatchTypeOf<Subject<Some<number>>>()
-      expectTypeOf(filtered_custom).toMatchTypeOf<Subject<Some<number>>>()
+    it("can be used to narrow Maybe to Some (with a custom type guard)", () => {
+      const subject = Subject() as Subject<Maybe<number>>
+
+      const is_some = (value: unknown): value is Some<number> => value instanceof Some
+      const filtered = subject.filter(is_some)
+
+      const next = fn()
+      filtered.subscribe({ next, complete: () => {} })
+
+      subject.next(Maybe())
+      subject.next(Maybe(1))
+
+      expect(next).toHaveBeenCalledWith(Maybe(1))
+      expect(next).not.toHaveBeenCalledWith(Maybe())
+
+      expectTypeOf(filtered).toMatchTypeOf<Subject<Some<number>>>() // works
     })
   })
 
