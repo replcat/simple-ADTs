@@ -8,6 +8,44 @@ function nonnullable<T>(t: fc.Arbitrary<T>): fc.Arbitrary<NonNullable<T>> {
   return t.filter(value => value != null) as fc.Arbitrary<NonNullable<T>>
 }
 
+describe("simple cases", () => {
+  test("applying a Some of a function to a Some", () => {
+    const fn = Some((n: number) => String(n))
+    const applicative = Some(1 as number)
+    const result = applicative.ap(fn)
+
+    expect(result).toEqual(Some("1"))
+    expectTypeOf(result).toMatchTypeOf<Maybe<string>>()
+  })
+
+  test("applying a Maybe (Some) of a function to a Maybe (Some)", () => {
+    const fn = Maybe((n: number) => String(n))
+    const applicative = Maybe(1 as number)
+    const result = applicative.ap(fn)
+
+    expect(result).toEqual(Some("1"))
+    expectTypeOf(result).toMatchTypeOf<Maybe<string>>()
+  })
+
+  test("applying a Maybe (None) of a function to a Maybe (Some)", () => {
+    const fn = Maybe((n: number) => String(n))
+    const applicative = Maybe<number>()
+    const result = applicative.ap(fn)
+
+    expect(result).toBeInstanceOf(None)
+    expectTypeOf(result).toMatchTypeOf<Maybe<string>>()
+  })
+
+  test("applying a Maybe (Some) of a function to a Maybe (None)", () => {
+    const fn = None() as Maybe<(n: number) => string>
+    const applicative = Maybe(1 as number)
+    const result = applicative.ap(fn)
+
+    expect(result).toBeInstanceOf(None)
+    expectTypeOf(result).toMatchTypeOf<Maybe<string>>()
+  })
+})
+
 describe("applying a function", () => {
   const it = test.prop({
     wrapped_fn: fc.oneof(fc.constant(None()), fc.constant(Some((s: string) => s.length))) as fc.Arbitrary<Maybe<(s: string) => number>>,

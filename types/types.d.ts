@@ -75,13 +75,24 @@ interface Base<T> {
   chain<U, F extends Base<NonNullable<U>>>(fn: (value: Innermost<T>) => F): F
   fold<U, E>(on_value: (value?: T) => U, otherwise?: (error: Error) => E): U | E
 
-  map<U>(fn: (value: T) => NonNullable<U>): this extends Box<T> ? Box<NonNullable<U>> // Box comes first because it's indistinguishable from Some
+  // methods signatures which need to identify their particular variant...
+  // (note: Box comes first because it's indistinguishable from Some)
+
+  map<U>(fn: (value: T) => NonNullable<U>): this extends Box<T> ? Box<NonNullable<U>>
     : this extends Some<T> ? Some<NonNullable<U>>
     : this extends None ? None
     : this extends Fail ? Fail
     : this extends Maybe<T> ? Maybe<NonNullable<U>>
     : this extends Result<T> ? Result<NonNullable<U>>
     : Base<NonNullable<U>>
+
+  ap<V extends Base<(value: T) => any>>(this: Base<T>, fn: V): V extends Maybe<(value: T) => any> ? Maybe<WrappedReturn<V>>
+    : V extends Result<(value: T) => any> ? Result<WrappedReturn<V>>
+    : V extends Box<(value: T) => any> ? Box<WrappedReturn<V>>
+    : V extends Some<(value: T) => any> ? Some<WrappedReturn<V>>
+    : V extends None ? None
+    : V extends Fail ? Fail
+    : Base<WrappedReturn<V>>
 
   match<Sout = never, NOut = never, FOut = never>(matcher: Matcher<this, T, Sout, NOut, FOut>): Consolidate<
     this extends Maybe<T> ? Sout | NOut
@@ -92,6 +103,8 @@ interface Base<T> {
       : Sout | NOut | FOut
   >
 }
+
+type WrappedReturn<T> = T extends Base<(arg: any) => infer U> ? U : never
 
 // require keys for each member of the union on which we're matching
 type Matcher<Self extends Base<T>, T, Sout, NOut, FOut> = {
@@ -137,7 +150,6 @@ type Result<T = unknown> = Some<T> | Fail<T>
 interface Some<T = unknown> extends Base<T> {
   name: "Some"
   value: NonNullable<T>
-  ap<U>(fn: Some<(value: T) => U>): Some<U>
   traverse<U, F extends Some<NonNullable<U>>>(fn: (value: Innermost<T>) => F): Some<F>
   fold<U>(fn: (value: T) => U): U
 }
@@ -184,16 +196,3 @@ interface Subject<T = unknown> {
   map: <U>(fn: (value: T) => U) => Subject<U>
   merge: <U>(other: Subject<U>) => Subject<T | U>
 }
-
-// match<Sout, NOut, FOut>(matcher: {
-//   Some?: (value: T) => Sout
-//   None?: () => NOut
-//   Fail?: (error: Error) => FOut
-// }): Consolidate<
-//   this extends Maybe<T> ? Sout | NOut
-//     : this extends Result<T> ? Sout | FOut
-//     : this extends Some<T> ? Sout
-//     : this extends None ? NOut
-//     : this extends Fail ? FOut
-//     : Sout | NOut | FOut
-// >
