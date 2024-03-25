@@ -260,6 +260,15 @@ const constructors = (() => {
   }
 })()
 
+/** @type {Pipe} */
+const pipe = (...args) => value => args.reduce((acc, fn) => fn(acc), value)
+
+/** @type {Curry} */
+const curry = (fn, ...args) =>
+  args.length >= fn.length
+    ? fn(...args)
+    : curry.bind(null, fn, ...args)
+
 /**
  * @param {string | undefined} stack
  */
@@ -282,4 +291,4 @@ function assert(condition, message) {
   }
 }
 
-export { constructors }
+export { constructors, curry, pipe }

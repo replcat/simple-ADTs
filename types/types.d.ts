@@ -197,3 +197,20 @@ interface Subject<T = unknown> {
   map: <U>(fn: (value: T) => U) => Subject<U>
   merge: <U>(other: Subject<U>) => Subject<T | U>
 }
+
+type Pipe = {
+  <A, B>(ab: (a: A) => B): (a: A) => B
+  <A, B, C>(ab: (a: A) => B, bc: (b: B) => C): (a: A) => C
+  <A, B, C, D>(ab: (a: A) => B, bc: (b: B) => C, cd: (c: C) => D): (a: A) => D
+  <A, B, C, D, E>(ab: (a: A) => B, bc: (b: B) => C, cd: (c: C) => D, de: (d: D) => E): (a: A) => E
+  <A, B, C, D, E, F>(ab: (a: A) => B, bc: (b: B) => C, cd: (c: C) => D, de: (d: D) => E, ef: (e: E) => F): (a: A) => F
+  <A, B, C, D, E, F, G>(ab: (a: A) => B, bc: (b: B) => C, cd: (c: C) => D, de: (d: D) => E, ef: (e: E) => F, fg: (f: F) => G): (a: A) => G
+}
+
+type Curry<A = any, B = any, C = any, D = any, E = any, F = any, G = any> = {
+  <A, B, C>(ab: (a: A, b: B) => C): (a: A) => (b: B) => C
+  <A, B, C, D>(abc: (a: A, b: B, c: C) => D): (a: A) => Curry<B, C, D>
+  <A, B, C, D, E>(abcd: (a: A, b: B, c: C, d: D) => E): (a: A) => Curry<B, C, D, E>
+  <A, B, C, D, E, F>(abcde: (a: A, b: B, c: C, d: D, e: E) => F): (a: A) => Curry<B, C, D, E, F>
+  <A, B, C, D, E, F, G>(abcdef: (a: A, b: B, c: C, d: D, e: E, f: F) => G): (a: A) => Curry<B, C, D, E, F, G>
+}
