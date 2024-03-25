@@ -81,11 +81,11 @@ interface Base<T> {
     : this extends Result<T> ? Result<NonNullable<U>>
     : Base<NonNullable<U>>
 
-  ap<V extends Base<(value: T) => any>>(this: Base<T>, fn: V): V extends Maybe<(value: T) => any> ? Maybe<WrappedReturn<V>>
-    : V extends Result<(value: T) => any> ? Result<WrappedReturn<V>>
-    : V extends Some<(value: T) => any> ? Some<WrappedReturn<V>>
+  ap<V extends Base<(value: T) => any>>(this: Base<T>, fn: V): V extends Some<(value: T) => any> ? Some<WrappedReturn<V>>
     : V extends None ? None
     : V extends Fail ? Fail
+    : V extends Maybe<(value: T) => any> ? Maybe<WrappedReturn<V>>
+    : V extends Result<(value: T) => any> ? Result<WrappedReturn<V>>
     : Base<WrappedReturn<V>>
 
   traverse<U, F extends Base<NonNullable<U>>>(fn: (value: Innermost<T>) => F): this extends Some<T> ? Some<F>
