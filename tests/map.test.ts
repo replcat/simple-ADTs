@@ -3,7 +3,7 @@ import { assert, describe, expect, expectTypeOf } from "vitest"
 import { nonnullable_functions, nonnullable_values } from "./helpers/arbitraries.js"
 
 import { constructors } from "../lib.js"
-const { Base, Maybe, Result, Some, None, Fail } = constructors
+const { Base, Box, Maybe, Result, Some, None, Fail } = constructors
 
 function nonnullable<T>(t: fc.Arbitrary<T>): fc.Arbitrary<NonNullable<T>> {
   return t.filter(value => value != null) as fc.Arbitrary<NonNullable<T>>
@@ -106,6 +106,13 @@ describe("type-level tests", () => {
     if (mapped.isa(Base)) expectTypeOf(mapped).toMatchTypeOf<Base<number>>()
   })
 
+  test("mapping over Box", () => {
+    const box = Box("test")
+    const mapped = box.map(value => value.length)
+
+    if (mapped.isa(Box)) expectTypeOf(mapped).toMatchTypeOf<Box<number>>()
+  })
+
   test("mapping over Maybe", () => {
     const maybe = Maybe("test")
     const mapped = maybe.map(value => value.length)
@@ -168,7 +175,7 @@ describe("mapping over a Maybe", () => {
         expectTypeOf(actual).toEqualTypeOf(expected)
         expect(actual).toEqual(expected)
       } else {
-        assert(mapped.isa(None))
+        expect.unreachable()
       }
     })
   })
@@ -191,7 +198,7 @@ describe("mapping over a Maybe", () => {
         expectTypeOf(actual).toEqualTypeOf(expected)
         expect(actual).toEqual(expected)
       } else {
-        assert(mapped.isa(None))
+        expect.unreachable()
       }
     })
   })
@@ -216,7 +223,7 @@ describe("mapping over a Result", () => {
         expectTypeOf(actual).toEqualTypeOf(expected)
         expect(actual).toEqual(expected)
       } else {
-        assert(mapped.isa(Fail))
+        expect.unreachable()
       }
     })
   })
@@ -239,7 +246,7 @@ describe("mapping over a Result", () => {
         expectTypeOf(actual).toEqualTypeOf(expected)
         expect(actual).toEqual(expected)
       } else {
-        assert(mapped.isa(Fail))
+        expect.unreachable()
       }
     })
   })

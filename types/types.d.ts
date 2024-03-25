@@ -72,9 +72,16 @@ interface Base<T> {
   unwrap_or_else<U>(fn: () => U): T | U
   join<U>(this: U): U extends Some<Some<infer V>> ? Some<V> : U
   flatten<U>(this: U): U extends Some<infer V> ? Some<Innermost<V>> : U
-  map<U>(fn: (value: T) => NonNullable<U>): Base<NonNullable<U>>
   chain<U, F extends Base<NonNullable<U>>>(fn: (value: Innermost<T>) => F): F
   fold<U, E>(on_value: (value?: T) => U, otherwise?: (error: Error) => E): U | E
+
+  map<U>(fn: (value: T) => NonNullable<U>): this extends Box<T> ? Box<NonNullable<U>> // Box comes first because it's indistinguishable from Some
+    : this extends Some<T> ? Some<NonNullable<U>>
+    : this extends None ? None
+    : this extends Fail ? Fail
+    : this extends Maybe<T> ? Maybe<NonNullable<U>>
+    : this extends Result<T> ? Result<NonNullable<U>>
+    : Base<NonNullable<U>>
 
   match<Sout = never, NOut = never, FOut = never>(matcher: Matcher<this, T, Sout, NOut, FOut>): Consolidate<
     this extends Maybe<T> ? Sout | NOut
@@ -130,7 +137,6 @@ type Result<T = unknown> = Some<T> | Fail<T>
 interface Some<T = unknown> extends Base<T> {
   name: "Some"
   value: NonNullable<T>
-  map<U>(fn: (value: T) => NonNullable<U>): Some<NonNullable<U>>
   ap<U>(fn: Some<(value: T) => U>): Some<U>
   traverse<U, F extends Some<NonNullable<U>>>(fn: (value: Innermost<T>) => F): Some<F>
   fold<U>(fn: (value: T) => U): U
@@ -142,7 +148,6 @@ interface Some<T = unknown> extends Base<T> {
  */
 interface None<T = never> extends Base<T> {
   name: "None"
-  map<U>(fn: (value: T) => U): None<never>
   fold<E>(_: any, on_none: () => E): E
 }
 
@@ -154,7 +159,6 @@ interface Fail<T = never> extends Base<T> {
   name: "Fail"
   error: Error
   get message(): string
-  map<U>(fn: (value: T) => U): Fail<never>
   fold<E>(_: any, on_fail: (error: Error) => E): E
 }
 
