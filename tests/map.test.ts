@@ -168,7 +168,7 @@ describe("mapping over a Maybe", () => {
         expectTypeOf(actual).toEqualTypeOf(expected)
         expect(actual).toEqual(expected)
       } else {
-        assert(mapped.isa(None) || mapped.isa(Fail))
+        assert(mapped.isa(None))
       }
     })
   })
@@ -191,7 +191,7 @@ describe("mapping over a Maybe", () => {
         expectTypeOf(actual).toEqualTypeOf(expected)
         expect(actual).toEqual(expected)
       } else {
-        assert(mapped.isa(None) || mapped.isa(Fail))
+        assert(mapped.isa(None))
       }
     })
   })

@@ -157,9 +157,7 @@ describe("methods", () => {
       expect(next_custom).not.toHaveBeenCalledWith(Maybe())
 
       // FIXME can't filter ADTs on type guards :(
-      // @ts-expect-error
       expectTypeOf(filtered_isa).toMatchTypeOf<Subject<Some<number>>>()
-      // @ts-expect-error
       expectTypeOf(filtered_custom).toMatchTypeOf<Subject<Some<number>>>()
     })
   })

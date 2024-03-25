@@ -58,7 +58,7 @@ type Constructors = {
  * The most general type, a union of everything.
  * No (useful) runtime representation.
  */
-interface Base<T = unknown> {
+interface Base<T> {
   name: "Some" | "None" | "Fail"
   isa<U>(constructor: (arg?: any) => U): this is U extends Some ? Some<T>
     : U extends None ? None
@@ -75,100 +75,23 @@ interface Base<T = unknown> {
   map<U>(fn: (value: T) => NonNullable<U>): Base<NonNullable<U>>
   chain<U, F extends Base<NonNullable<U>>>(fn: (value: Innermost<T>) => F): F
   fold<U, E>(on_value: (value?: T) => U, otherwise?: (error: Error) => E): U | E
-  match<JOut, NOut, FOut>(matcher: {
-    Some: (value: T) => JOut
-    None: () => NOut
-    Fail: (error: Error) => FOut
-  }): Consolidate<JOut | NOut | FOut>
+
+  match<Sout = never, NOut = never, FOut = never>(matcher: Matcher<this, T, Sout, NOut, FOut>): Consolidate<
+    this extends Maybe<T> ? Sout | NOut
+      : this extends Result<T> ? Sout | FOut
+      : this extends Some<T> ? Sout
+      : this extends None ? NOut
+      : this extends Fail ? FOut
+      : Sout | NOut | FOut
+  >
 }
 
-/**
- * Definitely contains a value.
- * Just a Some at runtime.
- */
-interface Box<T = unknown> extends Base<T> {
-  name: "Some"
-  value: NonNullable<T>
-  map<U>(fn: (value: T) => NonNullable<U>): Box<NonNullable<U>>
-  ap<U>(fn: Box<(value: T) => U>): Box<U>
-  traverse<U, F extends Box<any>>(fn: (value: T) => F): F
-  fold<U>(fn: (value: T) => U): U
-}
-
-/**
- * Union of Some and None.
- * No runtime representation.
- */
-interface Maybe<T = unknown> extends Base<T> {
-  name: "Some" | "None"
-  map<U>(fn: (value: T) => NonNullable<U>): Maybe<NonNullable<U>>
-  ap<U>(fn: Maybe<(value: T) => U>): Maybe<U>
-  traverse<U, F extends Maybe<NonNullable<U>>>(fn: (value: Innermost<T>) => F): Maybe<F>
-  fold<U, E>(on_value: (value: T) => U, on_none?: (_: never) => E): U | E
-  match<JOut, NOut>(matcher: {
-    Some: (value: T) => JOut
-    None: () => NOut
-  }): Consolidate<JOut | NOut>
-}
-
-/**
- * Union of Some and Fail.
- * No runtime representation.
- */
-interface Result<T = unknown> extends Base<T> {
-  name: "Some" | "Fail"
-  map<U>(fn: (value: T) => NonNullable<U>): Result<NonNullable<U>>
-  ap<U>(fn: Result<(value: T) => U>): Result<U>
-  traverse<U, F extends Result<NonNullable<U>>>(fn: (value: Innermost<T>) => F): Result<F>
-  fold<U, E>(on_value: (value: T) => U, on_error?: (error: Error) => E): U | E
-  match<JOut, FOut>(matcher: {
-    Some: (value: T) => JOut
-    Fail: (error: Error) => FOut
-  }): Consolidate<JOut | FOut>
-}
-
-/**
- * A value that isn't merely hypothetical — it's right there, look.
- * Corresponds to the `Some` type at runtime.
- */
-interface Some<T = unknown> extends Base<T> {
-  name: "Some"
-  value: NonNullable<T>
-  map<U>(fn: (value: T) => NonNullable<U>): Some<NonNullable<U>>
-  ap<U>(fn: Some<(value: T) => U>): Some<U>
-  traverse<U, F extends Some<NonNullable<U>>>(fn: (value: Innermost<T>) => F): Some<F>
-  fold<U>(fn: (value: T) => U): U
-  match<JOut>(matcher: {
-    Some: (value: T) => JOut
-  }): Consolidate<JOut>
-}
-
-/**
- * An absent value that was optional anyway, so no big deal.
- * Corresponds to the `None` type at runtime.
- */
-interface None extends Base<never> {
-  name: "None"
-  map<U>(fn: (value: never) => U): this
-  fold<E>(_: any, on_none: () => E): E
-  match<NOut>(matcher: {
-    None: () => NOut
-  }): Consolidate<NOut>
-}
-
-/**
- * An absent value that *possibly* should have existed (but it depends).
- * Corresponds to the `Fail` type at runtime.
- */
-interface Fail extends Base<never>, Error {
-  name: "Fail"
-  error: Error
-  get message(): string
-  map<U>(fn: (value: never) => U): this
-  fold<E>(_: any, on_fail: (error: Error) => E): E
-  match<FOut>(matcher: {
-    Fail: (error: Error) => FOut
-  }): Consolidate<FOut>
+// require keys for each member of the union on which we're matching
+type Matcher<Self extends Base<T>, T, Sout, NOut, FOut> = {
+  [K in Self["name"]]: K extends "Some" ? (value: T) => Sout
+    : K extends "None" ? () => NOut
+    : K extends "Fail" ? (error: Error) => FOut
+    : never
 }
 
 // hacks! using the tuple to create a fake type for typescript to reason about,
@@ -181,6 +104,59 @@ type Consolidate<Union> = [Union] extends [Some<infer T>] ? Some<T>
   : [Union] extends [Some<infer T> | Fail] ? Result<T>
   : [Union] extends [Some<infer T> | None | Fail] ? Base<T>
   : Union // not never, to allow other types through
+
+/**
+ * Definitely contains a value.
+ * Just a Some at runtime.
+ */
+type Box<T = unknown> = Some<T>
+
+/**
+ * Union of Some and None.
+ * No runtime representation.
+ */
+type Maybe<T = unknown> = Some<T> | None<T>
+
+/**
+ * Union of Some and Fail.
+ * No runtime representation.
+ */
+type Result<T = unknown> = Some<T> | Fail<T>
+
+/**
+ * A value that isn't merely hypothetical — it's right there, look.
+ * Corresponds to the `Some` type at runtime.
+ */
+interface Some<T = unknown> extends Base<T> {
+  name: "Some"
+  value: NonNullable<T>
+  map<U>(fn: (value: T) => NonNullable<U>): Some<NonNullable<U>>
+  ap<U>(fn: Some<(value: T) => U>): Some<U>
+  traverse<U, F extends Some<NonNullable<U>>>(fn: (value: Innermost<T>) => F): Some<F>
+  fold<U>(fn: (value: T) => U): U
+}
+
+/**
+ * An absent value that was optional anyway, so no big deal.
+ * Corresponds to the `None` type at runtime.
+ */
+interface None<T = never> extends Base<T> {
+  name: "None"
+  map<U>(fn: (value: T) => U): None<never>
+  fold<E>(_: any, on_none: () => E): E
+}
+
+/**
+ * An absent value that *possibly* should have existed (but it depends).
+ * Corresponds to the `Fail` type at runtime.
+ */
+interface Fail<T = never> extends Base<T> {
+  name: "Fail"
+  error: Error
+  get message(): string
+  map<U>(fn: (value: T) => U): Fail<never>
+  fold<E>(_: any, on_fail: (error: Error) => E): E
+}
 
 interface Subscriber<T> {
   next: (value: T) => void
@@ -204,3 +180,16 @@ interface Subject<T = unknown> {
   map: <U>(fn: (value: T) => U) => Subject<U>
   merge: <U>(other: Subject<U>) => Subject<T | U>
 }
+
+// match<Sout, NOut, FOut>(matcher: {
+//   Some?: (value: T) => Sout
+//   None?: () => NOut
+//   Fail?: (error: Error) => FOut
+// }): Consolidate<
+//   this extends Maybe<T> ? Sout | NOut
+//     : this extends Result<T> ? Sout | FOut
+//     : this extends Some<T> ? Sout
+//     : this extends None ? NOut
+//     : this extends Fail ? FOut
+//     : Sout | NOut | FOut
+// >

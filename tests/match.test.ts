@@ -6,6 +6,34 @@ import { constructors } from "../lib.js"
 const { Base, Maybe, Result, Some, None, Fail } = constructors
 
 describe("type transformations", () => {
+  test("Some<number> to number", () => {
+    const some = Some(1) as Some<number>
+    const number = some.match({
+      Some: value => value,
+    })
+    expectTypeOf(number).toEqualTypeOf<number>()
+    expect(number).toBe(1)
+  })
+
+  test("Some<number> to Maybe<string>", () => {
+    const some = Some(1) as Some<number>
+    const maybe = some.match({
+      Some: value => Maybe(String(value)),
+    })
+    expectTypeOf(maybe).toMatchTypeOf<Maybe<string>>()
+    expect(maybe).toEqual(Maybe("1"))
+  })
+
+  test("Maybe<string> to Some<number>", () => {
+    const maybe = Maybe("test")
+    const some = maybe.match({
+      Some: value => Some(value.length),
+      None: () => Some(0),
+    })
+    expectTypeOf(some).toMatchTypeOf<Some<number>>()
+    expect(some).toEqual(Some(4))
+  })
+
   test("Maybe<string> to Result<number>", () => {
     const maybe = Maybe("test")
     const result = maybe.match({
@@ -13,6 +41,7 @@ describe("type transformations", () => {
       None: Fail,
     })
     expectTypeOf(result).toMatchTypeOf<Result<number>>()
+    expect(result).toEqual(Some(4))
   })
 
   test("reducing Maybes to a number", () => {
@@ -30,23 +59,16 @@ describe("type transformations", () => {
   })
 })
 
-describe.each([
-  { Type: Base },
-  { Type: Maybe },
-  { Type: Result },
-  { Type: Some },
-  { Type: None },
-  { Type: Fail },
-])("$Type.name", ({ Type }) => {
+describe.each([Base, Maybe, Result, Some, None, Fail])("%s", constructor => {
   test.prop([
-    Type === Fail
+    constructor === Fail
       ? fc.oneof(fc.string(), fc.string().map(message => new Error(message)))
       : nonnullable_values,
     fc.func(nonnullable_values),
     fc.func(nonnullable_values),
     fc.func(nonnullable_values),
   ])("handles the match", (value: any, handle_some, handle_none, handle_fail) => {
-    let instance = Type(Type === None ? undefined : value)
+    let instance = constructor(constructor === None ? undefined : value)
 
     // @ts-ignore
     let result = instance.match({

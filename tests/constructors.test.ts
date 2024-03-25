@@ -31,7 +31,7 @@ describe("the None constructor", () => {
     expect(instance).toBeInstanceOf(None)
   })
 
-  test("passing an argument isa a type error", () => {
+  test("passing an argument is a type error", () => {
     // @ts-expect-error
     None("blep")
   })
