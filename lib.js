@@ -154,6 +154,7 @@ const constructors = (() => {
   // methods which can be called independently via the type constructors
   const standalone_methods = ["ap", "chain", "flatten", "join", "map", "traverse", "fold", "match"]
   for (const method of standalone_methods) {
+    Some[method] = delegate_to_instance(method)
     Maybe[method] = delegate_to_instance(method)
     Result[method] = delegate_to_instance(method)
   }
