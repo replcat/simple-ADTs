@@ -136,7 +136,7 @@ describe("methods", () => {
 
     it("can be used to narrow Maybe to Some (with Some.isa)", () => {
       const subject = Subject() as Subject<Maybe<number>>
-      const filtered = subject.filter(Some.isa)
+      const filtered = subject.filter(Some.isa())
 
       const next = fn()
       filtered.subscribe({ next })

@@ -17,13 +17,13 @@ describe("join and flatten", () => {
     ] as Some<Some<Some<number>>>[]
 
     test("join", () => {
-      const result = some_some_somes.map(S.join)
+      const result = some_some_somes.map(S.join())
       expectTypeOf(result).toMatchTypeOf<Some<Some<number>>[]>()
       expect(result).toEqual([Some(1), Some(2), Some(Some(3))])
     })
 
     test("flatten", () => {
-      const result = some_some_somes.map(S.flatten)
+      const result = some_some_somes.map(S.flatten())
       expectTypeOf(result).toMatchTypeOf<Some<number>[]>()
       expect(result).toEqual([Some(1), Some(2), Some(3)])
     })
@@ -38,13 +38,13 @@ describe("join and flatten", () => {
     ] as Maybe<Maybe<Maybe<number>>>[] // not strictly true...
 
     test("join", () => {
-      const result = maybe_maybe_maybes.map(M.join)
+      const result = maybe_maybe_maybes.map(M.join())
       expectTypeOf(result).toMatchTypeOf<Maybe<Maybe<number>>[]>()
       expect(result).toEqual([None(), Some(1), Some(2), Some(Some(3))])
     })
 
     test("flatten", () => {
-      const result = maybe_maybe_maybes.map(M.flatten)
+      const result = maybe_maybe_maybes.map(M.flatten())
       expectTypeOf(result).toMatchTypeOf<Maybe<number>[]>()
       expect(result).toEqual([None(), Some(1), Some(2), Some(3)])
     })
@@ -59,13 +59,13 @@ describe("join and flatten", () => {
     ] as Result<Result<Result<number>>>[] // not strictly true...
 
     test("join", () => {
-      const result = result_result_results.map(R.join)
+      const result = result_result_results.map(R.join())
       expectTypeOf(result).toMatchTypeOf<Result<Result<number>>[]>()
       expect(result).toEqual([Fail(), Some(1), Some(2), Some(Some(3))])
     })
 
     test("flatten", () => {
-      const result = result_result_results.map(R.flatten)
+      const result = result_result_results.map(R.flatten())
       expectTypeOf(result).toMatchTypeOf<Result<number>[]>()
       expect(result).toEqual([Fail(), Some(1), Some(2), Some(3)])
     })
@@ -174,7 +174,7 @@ describe("traverse", () => {
 
     const result = somes
       .map(S.traverse((n: number) => Some(String(n))))
-      .map(S.flatten)
+      .map(S.flatten())
 
     expectTypeOf(result).toMatchTypeOf<Some<string>[]>()
     expect(result).toEqual([Some("1"), Some("2")])
@@ -185,7 +185,7 @@ describe("traverse", () => {
 
     const result = maybes
       .map(M.traverse((n: number) => Maybe(String(n))))
-      .map(M.flatten)
+      .map(M.flatten())
 
     expectTypeOf(result).toMatchTypeOf<Maybe<string>[]>()
     expect(result).toEqual([None(), Some("1"), Some("2")])
@@ -196,7 +196,7 @@ describe("traverse", () => {
 
     const result = results
       .map(R.traverse((n: number) => Result(String(n))))
-      .map(R.flatten)
+      .map(R.flatten())
 
     expectTypeOf(result).toMatchTypeOf<Result<string>[]>()
     expect(result).toEqual([Fail(), Some("1"), Some("2")])
@@ -275,5 +275,18 @@ describe("match", () => {
 
     expectTypeOf(result).toMatchTypeOf<string[]>()
     expect(result).toEqual(["oh nooo", "1", "2"])
+  })
+})
+
+describe("calling the standalone functions directly", () => {
+  test("Some", () => {
+    const maybe = Maybe(1)
+    expectTypeOf(maybe).toMatchTypeOf<Maybe<number>>()
+
+    const mapped = M.map((n: number) => String(n))(maybe)
+    expectTypeOf(mapped).toMatchTypeOf<Maybe<string>>()
+
+    assert(Some.isa()(maybe))
+    expectTypeOf(maybe).toMatchTypeOf<Some<number>>()
   })
 })

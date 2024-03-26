@@ -6,11 +6,11 @@ type Constructors = {
   Maybe:
     & (<T>(value?: T) => Maybe<NonNullable<T>>)
     & {
-      isa: <T>(instance: Base<T>) => instance is Maybe<T>
+      isa: () => <T>(instance: Base<T>) => instance is Maybe<T>
       ap: <T, U>(fn: Maybe<(value: T) => U>) => (maybe: Maybe<T>) => Maybe<U>
       chain: <T, F extends Maybe<any>>(fn: (value: Innermost<T>) => F) => (maybe: Maybe<T>) => F
-      flatten: <T>(maybe: Maybe<T>) => Maybe<Innermost<T>>
-      join: <T>(maybe: Maybe<Maybe<T>>) => Maybe<T>
+      flatten: () => <T>(maybe: Maybe<T>) => Maybe<Innermost<T>>
+      join: () => <T>(maybe: Maybe<Maybe<T>>) => Maybe<T>
       map: <T, U>(fn: (value: T) => U) => (maybe: Maybe<T>) => Maybe<U>
       traverse: <T, F extends Maybe<any>>(fn: (value: T) => F) => (maybe: Maybe<T>) => Maybe<F>
       fold: <T, U, E>(on_value: (value?: T) => U, on_none?: () => E) => (maybe: Maybe<T>) => U | E
@@ -23,11 +23,11 @@ type Constructors = {
   Result:
     & (<T>(value?: T, on_null?: string | Error) => Result<NonNullable<T>>)
     & {
-      isa: <T>(instance: Base<T>) => instance is Result<T>
+      isa: () => <T>(instance: Base<T>) => instance is Result<T>
       ap: <T, U>(fn: Result<(value: T) => U>) => (result: Result<T>) => Result<U>
       chain: <T, F extends Result<any>>(fn: (value: Innermost<T>) => F) => (result: Result<T>) => F
-      flatten: <T>(result: Result<T>) => Result<Innermost<T>>
-      join: <T>(result: Result<Result<T>>) => Result<T>
+      flatten: () => <T>(result: Result<T>) => Result<Innermost<T>>
+      join: () => <T>(result: Result<Result<T>>) => Result<T>
       map: <T, U>(fn: (value: T) => U) => (result: Result<T>) => Result<U>
       traverse: <T, F extends Result<any>>(fn: (value: T) => F) => (result: Result<T>) => Result<F>
       fold: <T, U, E>(on_value: (value: T) => U, on_error?: (error: Error) => E) => (result: Result<T>) => U | E
@@ -40,11 +40,11 @@ type Constructors = {
   Some:
     & (<T>(value: NonNullable<T>) => Some<NonNullable<T>>)
     & {
-      isa: <T>(instance: Base<T>) => instance is Some<T>
+      isa: () => <T>(instance: Base<T>) => instance is Some<T>
       ap: <T, U>(fn: Some<(value: T) => U>) => (Some: Some<T>) => Some<U>
       chain: <T, F extends Some<any>>(fn: (value: Innermost<T>) => F) => (Some: Some<T>) => F
-      flatten: <T>(Some: Some<T>) => Some<Innermost<T>>
-      join: <T>(Some: Some<Some<T>>) => Some<T>
+      flatten: () => <T>(Some: Some<T>) => Some<Innermost<T>>
+      join: () => <T>(Some: Some<Some<T>>) => Some<T>
       map: <T, U>(fn: (value: T) => U) => (Some: Some<T>) => Some<U>
       traverse: <T, F extends Some<any>>(fn: (value: T) => F) => (Some: Some<T>) => Some<F>
       fold: <T, U>(fn: (value: T) => U) => (Some: Some<T>) => U
@@ -52,7 +52,7 @@ type Constructors = {
 
   None:
     & (() => None)
-    & { isa: (instance: Base<any>) => instance is None }
+    & { isa: () => (instance: Base<any>) => instance is None }
 
   Fail:
     & ((error?: string | Error, cause?: unknown) => Fail)
