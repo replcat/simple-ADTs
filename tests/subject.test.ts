@@ -2,7 +2,7 @@ import { assert, describe, expect, expectTypeOf, it, test, vi } from "vitest"
 const { fn } = vi
 
 import { constructors } from "../lib.js"
-const { Subject, Base, Maybe, Result, Some, None, Fail } = constructors
+const { Subject, Outcome, Maybe, Result, Just, Nothing, Failure } = constructors
 
 describe("constructor and basic usage", () => {
   describe("subscribe", () => {
@@ -134,9 +134,9 @@ describe("methods", () => {
       expectTypeOf(filtered).toMatchTypeOf<Subject<string>>()
     })
 
-    it("can be used to narrow Maybe to Some (with Some.isa)", () => {
+    it("can be used to narrow Maybe to Just (with Just.isa)", () => {
       const subject = Subject() as Subject<Maybe<number>>
-      const filtered = subject.filter(Some.isa())
+      const filtered = subject.filter(Just.isa())
 
       const next = fn()
       filtered.subscribe({ next })
@@ -147,14 +147,14 @@ describe("methods", () => {
       expect(next).toHaveBeenCalledWith(Maybe(1))
       expect(next).not.toHaveBeenCalledWith(Maybe())
 
-      expectTypeOf(filtered).toMatchTypeOf<Subject<Some<number>>>() // fails
+      expectTypeOf(filtered).toMatchTypeOf<Subject<Just<number>>>() // failures
     })
 
-    it("can be used to narrow Maybe to Some (with a custom type guard)", () => {
+    it("can be used to narrow Maybe to Just (with a custom type guard)", () => {
       const subject = Subject() as Subject<Maybe<number>>
 
-      const is_some = (value: unknown): value is Some<number> => value instanceof Some
-      const filtered = subject.filter(is_some)
+      const is_just = (value: unknown): value is Just<number> => value instanceof Just
+      const filtered = subject.filter(is_just)
 
       const next = fn()
       filtered.subscribe({ next })
@@ -165,7 +165,7 @@ describe("methods", () => {
       expect(next).toHaveBeenCalledWith(Maybe(1))
       expect(next).not.toHaveBeenCalledWith(Maybe())
 
-      expectTypeOf(filtered).toMatchTypeOf<Subject<Some<number>>>() // works
+      expectTypeOf(filtered).toMatchTypeOf<Subject<Just<number>>>() // works
     })
   })
 
@@ -254,8 +254,8 @@ describe("with other types", () => {
 
     subject.next(Result(null, "boo"))
 
-    expect(next).toHaveBeenCalledWith(Fail("boo"))
-    expect(subject.value).toEqual(Fail("boo"))
+    expect(next).toHaveBeenCalledWith(Failure("boo"))
+    expect(subject.value).toEqual(Failure("boo"))
   })
 
   it("Maybe (async)", async () => {

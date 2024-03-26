@@ -3,54 +3,54 @@ import { describe, expect, expectTypeOf } from "vitest"
 import { nonnullable_functions, nonnullable_values } from "./helpers/arbitraries.js"
 
 import { constructors } from "../lib.js"
-const { Base, Maybe, Result, Some, None, Fail } = constructors
+const { Outcome, Maybe, Result, Just, Nothing, Failure } = constructors
 
 describe("type transformations", () => {
-  test("Some<number> to number", () => {
-    const some = Some(1) as Some<number>
-    const number = some.match({
-      Some: value => value,
+  test("Just<number> to number", () => {
+    const just = Just(1) as Just<number>
+    const number = just.match({
+      Just: value => value,
     })
     expectTypeOf(number).toEqualTypeOf<number>()
     expect(number).toBe(1)
   })
 
-  test("Some<number> to Maybe<string>", () => {
-    const some = Some(1) as Some<number>
-    const maybe = some.match({
-      Some: value => Maybe(String(value)),
+  test("Just<number> to Maybe<string>", () => {
+    const just = Just(1) as Just<number>
+    const maybe = just.match({
+      Just: value => Maybe(String(value)),
     })
     expectTypeOf(maybe).toMatchTypeOf<Maybe<string>>()
     expect(maybe).toEqual(Maybe("1"))
   })
 
-  test("Maybe<string> to Some<number>", () => {
+  test("Maybe<string> to Just<number>", () => {
     const maybe = Maybe("test")
-    const some = maybe.match({
-      Some: value => Some(value.length),
-      None: () => Some(0),
+    const just = maybe.match({
+      Just: value => Just(value.length),
+      Nothing: () => Just(0),
     })
-    expectTypeOf(some).toMatchTypeOf<Some<number>>()
-    expect(some).toEqual(Some(4))
+    expectTypeOf(just).toMatchTypeOf<Just<number>>()
+    expect(just).toEqual(Just(4))
   })
 
   test("Maybe<string> to Result<number>", () => {
     const maybe = Maybe("test")
     const result = maybe.match({
-      Some: value => Some(value.length),
-      None: Fail,
+      Just: value => Just(value.length),
+      Nothing: Failure,
     })
     expectTypeOf(result).toMatchTypeOf<Result<number>>()
-    expect(result).toEqual(Some(4))
+    expect(result).toEqual(Just(4))
   })
 
   test("reducing Maybes to a number", () => {
-    let maybes = [Some("one"), None(), Some("two")] as Maybe<string>[]
+    let maybes = [Just("one"), Nothing(), Just("two")] as Maybe<string>[]
     let result = maybes.reduce(
       (acc, maybe) =>
         acc + maybe.match({
-          Some: value => value.length,
-          None: () => 10,
+          Just: value => value.length,
+          Nothing: () => 10,
         }),
       0,
     )
@@ -59,43 +59,43 @@ describe("type transformations", () => {
   })
 })
 
-describe.each([Base, Maybe, Result, Some, None, Fail])("%s", constructor => {
+describe.each([Outcome, Maybe, Result, Just, Nothing, Failure])("%s", constructor => {
   test.prop([
-    constructor === Fail
+    constructor === Failure
       ? fc.oneof(fc.string(), fc.string().map(message => new Error(message)))
       : nonnullable_values,
     fc.func(nonnullable_values),
     fc.func(nonnullable_values),
     fc.func(nonnullable_values),
-  ])("handles the match", (value: any, handle_some, handle_none, handle_fail) => {
-    let instance = constructor(constructor === None ? undefined : value)
+  ])("handles the match", (value: any, handle_just, handle_nothing, handle_failure) => {
+    let instance = constructor(constructor === Nothing ? undefined : value)
 
     // @ts-ignore
     let result = instance.match({
-      Some: handle_some,
-      None: handle_none,
-      Fail: handle_fail,
+      Just: handle_just,
+      Nothing: handle_nothing,
+      Failure: handle_failure,
     })
 
-    if (instance.isa(Some)) expect(result).toBe(handle_some(value))
-    else if (instance.isa(None)) expect(result).toBe(handle_none())
-    else if (instance.isa(Fail)) expect(result).toBe(handle_fail(instance.error))
+    if (instance.isa(Just)) expect(result).toBe(handle_just(value))
+    else if (instance.isa(Nothing)) expect(result).toBe(handle_nothing())
+    else if (instance.isa(Failure)) expect(result).toBe(handle_failure(instance.error))
     else expect.unreachable()
   })
 })
 
 describe("errors", () => {
   test("missing match case (type error and throws)", () => {
-    let some = Some(1)
+    let just = Just(1)
 
     // @ts-expect-error
-    expect(() => some.match({})).toThrow(TypeError)
+    expect(() => just.match({})).toThrow(TypeError)
   })
 
   test("unexpected match case (type error only)", () => {
     let maybe: Maybe<number>[] = []
 
     // @ts-expect-error
-    maybe.map(m => m.match({ Fail: () => {} }))
+    maybe.map(m => m.match({ Failure: () => {} }))
   })
 })

@@ -10,35 +10,35 @@ var curry = (fn, ...args) =>
 /** @type {Constructors} */
 // @ts-ignore: the following block is not type checked
 const constructors = (() => {
-  function Base(value) {
-    return Some(value)
+  function Outcome(value) {
+    return Just(value)
   }
 
-  Base.prototype = Object.create(Object.prototype)
-  Base.prototype.constructor = function() {
-    throw new TypeError(`${Base.name} cannot be directly constructed`)
+  Outcome.prototype = Object.create(Object.prototype)
+  Outcome.prototype.constructor = function() {
+    throw new TypeError(`${Outcome.name} cannot be directly constructed`)
   }
 
   // if you apply the function type to this the compiler dies :3
-  Base.prototype.isa = function(constructor) {
+  Outcome.prototype.isa = function(constructor) {
     assert(typeof constructor === "function", `expected a constructor (got ${constructor})`)
-    if (constructor.name === "Base") return this["name"] === "Some" || this["name"] === "None" || this["name"] === "Fail"
-    if (constructor.name === "Maybe") return this["name"] === "Some" || this["name"] === "None"
-    if (constructor.name === "Result") return this["name"] === "Some" || this["name"] === "Fail"
+    if (constructor.name === "Outcome") return this["name"] === "Just" || this["name"] === "Nothing" || this["name"] === "Failure"
+    if (constructor.name === "Maybe") return this["name"] === "Just" || this["name"] === "Nothing"
+    if (constructor.name === "Result") return this["name"] === "Just" || this["name"] === "Failure"
     return this instanceof constructor
   }
 
-  /** @this {globalThis.Base} */
-  Base.prototype.map = function(fn) {
+  /** @this {globalThis.Outcome} */
+  Outcome.prototype.map = function(fn) {
     assert(typeof fn === "function", `map expects a function (got ${fn})`)
     return "value" in this
       ? this.constructor(fn(this.value))
       : this
   }
 
-  /**  @this {globalThis.Base} */
-  Base.prototype.ap = function(wrapped_fn) {
-    assert(wrapped_fn instanceof Base, `expected a wrapped type (got ${wrapped_fn})`)
+  /**  @this {globalThis.Outcome} */
+  Outcome.prototype.ap = function(wrapped_fn) {
+    assert(wrapped_fn instanceof Outcome, `expected a wrapped type (got ${wrapped_fn})`)
     if (!("value" in wrapped_fn)) return wrapped_fn
     assert(typeof wrapped_fn.value === "function", `ap expects a function (got ${wrapped_fn.value})`)
     return ("value" in this)
@@ -46,121 +46,121 @@ const constructors = (() => {
       : this
   }
 
-  Base.prototype.join = function() {
-    return this instanceof Some && this["value"] instanceof Some ? this["value"] : this
+  Outcome.prototype.join = function() {
+    return this instanceof Just && this["value"] instanceof Just ? this["value"] : this
   }
 
-  Base.prototype.flatten = function() {
+  Outcome.prototype.flatten = function() {
     let joined = this
-    while (joined instanceof Some && joined["value"] instanceof Some) {
+    while (joined instanceof Just && joined["value"] instanceof Just) {
       // @ts-ignore
       joined = joined.join()
     }
     return joined
   }
 
-  Base.prototype.traverse = function(fn) {
+  Outcome.prototype.traverse = function(fn) {
     assert(typeof fn === "function", `traverse expects a function (got ${fn})`)
-    if (!(this instanceof Some)) return this
-    return (this["value"] instanceof Some)
-      ? Some(this["value"]["traverse"](fn))
+    if (!(this instanceof Just)) return this
+    return (this["value"] instanceof Just)
+      ? Just(this["value"]["traverse"](fn))
       : fn(this["value"]).map(this.constructor)
   }
 
-  Base.prototype.chain = function(fn) {
+  Outcome.prototype.chain = function(fn) {
     assert(typeof fn === "function", `chain expects a function (got ${fn})`)
-    if (!(this instanceof Some)) return this
-    return (this["value"] instanceof Some)
-      ? Some(this["value"]["chain"](fn))
+    if (!(this instanceof Just)) return this
+    return (this["value"] instanceof Just)
+      ? Just(this["value"]["chain"](fn))
       : fn(this["value"])
   }
 
-  Base.prototype.fold = function(on_some, otherwise) {
-    if (this instanceof Some) return on_some(this["value"])
+  Outcome.prototype.fold = function(on_just, otherwise) {
+    if (this instanceof Just) return on_just(this["value"])
     return "error" in this
       ? otherwise(this["error"])
       : otherwise()
   }
 
-  Base.prototype.match = function(matcher) {
-    if (typeof matcher.Some === "function" && this instanceof Some) return matcher.Some(this["value"])
-    if (typeof matcher.None === "function" && this instanceof None) return matcher.None()
-    if (typeof matcher.Fail === "function" && this instanceof Fail) return matcher.Fail(this["error"])
+  Outcome.prototype.match = function(matcher) {
+    if (typeof matcher.Just === "function" && this instanceof Just) return matcher.Just(this["value"])
+    if (typeof matcher.Nothing === "function" && this instanceof Nothing) return matcher.Nothing()
+    if (typeof matcher.Failure === "function" && this instanceof Failure) return matcher.Failure(this["error"])
     throw new TypeError(`No match for ${this["name"] ?? "unknown type"}`)
   }
 
-  Base.prototype.unwrap = function() {
-    if ("value" in this && this instanceof Some) return this.value
-    if ("error" in this && this instanceof Fail) throw this.error
+  Outcome.prototype.unwrap = function() {
+    if ("value" in this && this instanceof Just) return this.value
+    if ("error" in this && this instanceof Failure) throw this.error
     throw new TypeError(`Unwrapped an empty ${this["name"]}`)
   }
 
-  Base.prototype.unwrap_or = function(value) {
+  Outcome.prototype.unwrap_or = function(value) {
     if (value == null) throw new TypeError(`unwrap_or expects a value (got ${value})`)
-    if ("value" in this && this instanceof Some) return this.value
+    if ("value" in this && this instanceof Just) return this.value
     return value
   }
 
-  Base.prototype.unwrap_or_else = function(fn) {
+  Outcome.prototype.unwrap_or_else = function(fn) {
     if (typeof fn !== "function") throw new TypeError(`unwrap_or_else expects a function (got ${fn})`)
-    if ("value" in this && this instanceof Some) return this.value
+    if ("value" in this && this instanceof Just) return this.value
     return fn()
   }
 
   function Maybe(value) {
-    assert(!(value instanceof Fail), `${Maybe.name} cannot be constructed with a Fail`)
-    if (value instanceof None) return value
-    return value == null ? None() : Some(value)
+    assert(!(value instanceof Failure), `${Maybe.name} cannot be constructed with a Failure`)
+    if (value instanceof Nothing) return value
+    return value == null ? Nothing() : Just(value)
   }
 
   function Result(value, on_null) {
-    assert(!(value instanceof None), `${Result.name} cannot be constructed with a None`)
-    if (value instanceof Fail) return value
-    return value == null ? Fail(on_null) : Some(value)
+    assert(!(value instanceof Nothing), `${Result.name} cannot be constructed with a Nothing`)
+    if (value instanceof Failure) return value
+    return value == null ? Failure(on_null) : Just(value)
   }
 
-  function Some(value) {
-    assert(value != null, `${Some.name}.value cannot be null or undefined.`)
-    return Object.create(Some.prototype, {
-      name: { value: "Some" },
+  function Just(value) {
+    assert(value != null, `${Just.name}.value cannot be null or undefined.`)
+    return Object.create(Just.prototype, {
+      name: { value: "Just" },
       value: { value, enumerable: true },
     })
   }
 
-  Some.prototype = Object.create(Base.prototype)
-  Some.prototype.constructor = Some
+  Just.prototype = Object.create(Outcome.prototype)
+  Just.prototype.constructor = Just
 
-  function None() {
-    return Object.create(None.prototype, {
-      name: { value: "None" },
+  function Nothing() {
+    return Object.create(Nothing.prototype, {
+      name: { value: "Nothing" },
     })
   }
 
-  None.prototype = Object.create(Base.prototype)
-  None.prototype.constructor = None
+  Nothing.prototype = Object.create(Outcome.prototype)
+  Nothing.prototype.constructor = Nothing
 
-  function Fail(error, cause) {
+  function Failure(error, cause) {
     if (!(error instanceof Error)) {
       error = new Error(error ?? "(unspecified)")
       error.stack = trim_stack(error.stack)
     }
     if (cause) error.cause = cause
-    return Object.create(Fail.prototype, {
-      name: { value: "Fail" },
+    return Object.create(Failure.prototype, {
+      name: { value: "Failure" },
       error: { value: error, enumerable: true },
       message: { get: () => error.message, enumerable: true },
     })
   }
 
-  Fail.prototype = Object.create(Base.prototype)
-  Fail.prototype.constructor = Fail
+  Failure.prototype = Object.create(Outcome.prototype)
+  Failure.prototype.constructor = Failure
 
   const delegate_to_instance = method => (...params) => instance =>
     method in instance
       ? instance[method](...params)
       : instance
 
-  for (const type of [Some, None, Fail, Maybe, Result]) {
+  for (const type of [Just, Nothing, Failure, Maybe, Result]) {
     type["isa"] = () => instance => instance.isa(type)
     type["join"] = delegate_to_instance("join")
     type["flatten"] = delegate_to_instance("flatten")
@@ -180,7 +180,7 @@ const constructors = (() => {
     this.is_completed = false
   }
 
-  Subject.prototype = Object.create(Base.prototype)
+  Subject.prototype = Object.create(Outcome.prototype)
   Subject.prototype.constructor = Subject
 
   Subject.prototype.subscribe = function(subscriber) {
@@ -254,12 +254,12 @@ const constructors = (() => {
   }
 
   return {
-    Base,
+    Outcome,
     Maybe,
     Result,
-    Some,
-    None,
-    Fail,
+    Just,
+    Nothing,
+    Failure,
     Subject,
   }
 })()

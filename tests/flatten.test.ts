@@ -2,88 +2,88 @@ import { fc, test } from "@fast-check/vitest"
 import { assert, describe, expect, expectTypeOf } from "vitest"
 
 import { constructors } from "../lib.js"
-const { Base, Maybe, Result, Some, None, Fail } = constructors
+const { Outcome, Maybe, Result, Just, Nothing, Failure } = constructors
 
 describe("join", () => {
-  test("joining a Some", () => {
-    const some = Some(1)
-    const result = some.join()
+  test("joining a Just", () => {
+    const just = Just(1)
+    const result = just.join()
 
-    expectTypeOf(result).toMatchTypeOf<Some<number>>()
-    expect(result).toEqual(Some(1))
+    expectTypeOf(result).toMatchTypeOf<Just<number>>()
+    expect(result).toEqual(Just(1))
   })
 
-  test("joining a 2x Some", () => {
-    const some_some = Some(Some(1))
-    const result = some_some.join()
+  test("joining a 2x Just", () => {
+    const just_just = Just(Just(1))
+    const result = just_just.join()
 
-    expectTypeOf(result).toMatchTypeOf<Some<number>>()
-    expect(result).toEqual(Some(1))
+    expectTypeOf(result).toMatchTypeOf<Just<number>>()
+    expect(result).toEqual(Just(1))
   })
 
-  test("joining a 3x Some", () => {
-    const some_some_some = Some(Some(Some(1)))
-    const result = some_some_some.join()
+  test("joining a 3x Just", () => {
+    const just_just_just = Just(Just(Just(1)))
+    const result = just_just_just.join()
 
-    expectTypeOf(result).toMatchTypeOf<Some<Some<number>>>()
-    expect(result).toEqual(Some(Some(1)))
+    expectTypeOf(result).toMatchTypeOf<Just<Just<number>>>()
+    expect(result).toEqual(Just(Just(1)))
   })
 
-  test("joining a None", () => {
-    const none = None()
-    const result = none.join()
+  test("joining a Nothing", () => {
+    const nothing = Nothing()
+    const result = nothing.join()
 
-    expectTypeOf(result).toMatchTypeOf<None>()
-    expect(result).toEqual(None())
+    expectTypeOf(result).toMatchTypeOf<Nothing>()
+    expect(result).toEqual(Nothing())
   })
 
-  test("joining a Fail", () => {
-    const fail = Fail()
-    const result = fail.join()
+  test("joining a Failure", () => {
+    const failure = Failure()
+    const result = failure.join()
 
-    expectTypeOf(result).toMatchTypeOf<Fail>()
-    expect(result).toEqual(Fail())
+    expectTypeOf(result).toMatchTypeOf<Failure>()
+    expect(result).toEqual(Failure())
   })
 })
 
 describe("flatten", () => {
-  test("flattening a Some", () => {
-    const some = Some(1)
-    const result = some.flatten()
+  test("flattening a Just", () => {
+    const just = Just(1)
+    const result = just.flatten()
 
-    expectTypeOf(result).toMatchTypeOf<Some<number>>()
-    expect(result).toEqual(Some(1))
+    expectTypeOf(result).toMatchTypeOf<Just<number>>()
+    expect(result).toEqual(Just(1))
   })
 
-  test("flattening a 2x Some", () => {
-    const some_some = Some(Some(1))
-    const result = some_some.flatten()
+  test("flattening a 2x Just", () => {
+    const just_just = Just(Just(1))
+    const result = just_just.flatten()
 
-    expectTypeOf(result).toMatchTypeOf<Some<number>>()
-    expect(result).toEqual(Some(1))
+    expectTypeOf(result).toMatchTypeOf<Just<number>>()
+    expect(result).toEqual(Just(1))
   })
 
-  test("flattening a 3x Some", () => {
-    const some_some_some = Some(Some(Some(1)))
-    const result = some_some_some.flatten()
+  test("flattening a 3x Just", () => {
+    const just_just_just = Just(Just(Just(1)))
+    const result = just_just_just.flatten()
 
-    expectTypeOf(result).toMatchTypeOf<Some<number>>()
-    expect(result).toEqual(Some(1))
+    expectTypeOf(result).toMatchTypeOf<Just<number>>()
+    expect(result).toEqual(Just(1))
   })
 
-  test("flattening a None", () => {
-    const none = None()
-    const result = none.flatten()
+  test("flattening a Nothing", () => {
+    const nothing = Nothing()
+    const result = nothing.flatten()
 
-    expectTypeOf(result).toMatchTypeOf<None>()
-    expect(result).toEqual(None())
+    expectTypeOf(result).toMatchTypeOf<Nothing>()
+    expect(result).toEqual(Nothing())
   })
 
-  test("flattening a Fail", () => {
-    const fail = Fail()
-    const result = fail.flatten()
+  test("flattening a Failure", () => {
+    const failure = Failure()
+    const result = failure.flatten()
 
-    expectTypeOf(result).toMatchTypeOf<Fail>()
-    expect(result).toEqual(Fail())
+    expectTypeOf(result).toMatchTypeOf<Failure>()
+    expect(result).toEqual(Failure())
   })
 })

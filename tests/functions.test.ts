@@ -2,7 +2,7 @@ import { describe, expect, expectTypeOf, it } from "vitest"
 
 import { constructors, curry, pipe } from "../lib.js"
 
-const { Maybe, Some, None } = constructors
+const { Maybe, Just, Nothing } = constructors
 
 describe("curry", () => {
   describe("on a function of two arguments", () => {
@@ -60,8 +60,8 @@ describe("pipe", () => {
       M.map(double),
       M.map(stringify),
       M.match({
-        Some: value => `${value}!`,
-        None: () => "none",
+        Just: value => `${value}!`,
+        Nothing: () => "nothing",
       }),
     )
 
@@ -69,6 +69,6 @@ describe("pipe", () => {
     const results = inputs.map(thinger)
 
     expectTypeOf(thinger).toEqualTypeOf<(a: number) => string>()
-    expect(results).toEqual(["4!", "none", "6!", "none"])
+    expect(results).toEqual(["4!", "nothing", "6!", "nothing"])
   })
 })

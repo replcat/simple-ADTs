@@ -1,25 +1,25 @@
 import { assert, describe, expect, expectTypeOf, test } from "vitest"
 
 import { constructors } from "../lib.js"
-const { Maybe, Result, Some, None, Fail } = constructors
+const { Maybe, Result, Just, Nothing, Failure } = constructors
 
-test("Maybe of Some", () => {
+test("Maybe of Just", () => {
   const maybe = Maybe(1)
-  const result = maybe.fold(value => String(value), () => "none")
+  const result = maybe.fold(value => String(value), () => "nothing")
 
   expectTypeOf(result).toEqualTypeOf<string>()
   expect(result).toBe("1")
 })
 
-test("Maybe of None", () => {
+test("Maybe of Nothing", () => {
   const maybe = Maybe()
-  const result = maybe.fold(value => String(value), () => "none")
+  const result = maybe.fold(value => String(value), () => "nothing")
 
   expectTypeOf(result).toEqualTypeOf<string>()
-  expect(result).toBe("none")
+  expect(result).toBe("nothing")
 })
 
-test("Result of Some", () => {
+test("Result of Just", () => {
   const result = Result(1)
   const mapped = result.fold(value => String(value), error => error.message)
 
@@ -27,7 +27,7 @@ test("Result of Some", () => {
   expect(mapped).toBe("1")
 })
 
-test("Result of Fail", () => {
+test("Result of Failure", () => {
   const result = Result(null, "boo")
   const mapped = result.fold(value => String(value), error => error.message)
 
@@ -35,25 +35,25 @@ test("Result of Fail", () => {
   expect(mapped).toBe("boo")
 })
 
-test("Some", () => {
-  const some = Some(1)
-  const result = some.fold(value => String(value))
+test("Just", () => {
+  const just = Just(1)
+  const result = just.fold(value => String(value))
 
   expectTypeOf(result).toEqualTypeOf<string>()
   expect(result).toBe("1")
 })
 
-test("None", () => {
-  const none = None()
-  const result = none.fold(null, () => "boop")
+test("Nothing", () => {
+  const nothing = Nothing()
+  const result = nothing.fold(null, () => "boop")
 
   expectTypeOf(result).toEqualTypeOf<string>()
   expect(result).toBe("boop")
 })
 
-test("Fail", () => {
-  const fail = Fail("boo")
-  const result = fail.fold(null, error => error.message)
+test("Failure", () => {
+  const failure = Failure("boo")
+  const result = failure.fold(null, error => error.message)
 
   expectTypeOf(result).toEqualTypeOf<string>()
   expect(result).toBe("boo")

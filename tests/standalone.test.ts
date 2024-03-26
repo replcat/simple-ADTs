@@ -2,30 +2,30 @@ import { fc, test } from "@fast-check/vitest"
 import { assert, describe, expect, expectTypeOf } from "vitest"
 
 import { constructors } from "../lib.js"
-const { Maybe, Result, Some, None, Fail } = constructors
+const { Maybe, Result, Just, Nothing, Failure } = constructors
 
-const S = Some
+const S = Just
 const M = Maybe
 const R = Result
 
 describe("join and flatten", () => {
-  describe("Some", () => {
-    const some_some_somes = [
-      Some(1),
-      Some(Some(2)),
-      Some(Some(Some(3))),
-    ] as Some<Some<Some<number>>>[]
+  describe("Just", () => {
+    const just_just_justs = [
+      Just(1),
+      Just(Just(2)),
+      Just(Just(Just(3))),
+    ] as Just<Just<Just<number>>>[]
 
     test("join", () => {
-      const result = some_some_somes.map(S.join())
-      expectTypeOf(result).toMatchTypeOf<Some<Some<number>>[]>()
-      expect(result).toEqual([Some(1), Some(2), Some(Some(3))])
+      const result = just_just_justs.map(S.join())
+      expectTypeOf(result).toMatchTypeOf<Just<Just<number>>[]>()
+      expect(result).toEqual([Just(1), Just(2), Just(Just(3))])
     })
 
     test("flatten", () => {
-      const result = some_some_somes.map(S.flatten())
-      expectTypeOf(result).toMatchTypeOf<Some<number>[]>()
-      expect(result).toEqual([Some(1), Some(2), Some(3)])
+      const result = just_just_justs.map(S.flatten())
+      expectTypeOf(result).toMatchTypeOf<Just<number>[]>()
+      expect(result).toEqual([Just(1), Just(2), Just(3)])
     })
   })
 
@@ -40,13 +40,13 @@ describe("join and flatten", () => {
     test("join", () => {
       const result = maybe_maybe_maybes.map(M.join())
       expectTypeOf(result).toMatchTypeOf<Maybe<Maybe<number>>[]>()
-      expect(result).toEqual([None(), Some(1), Some(2), Some(Some(3))])
+      expect(result).toEqual([Nothing(), Just(1), Just(2), Just(Just(3))])
     })
 
     test("flatten", () => {
       const result = maybe_maybe_maybes.map(M.flatten())
       expectTypeOf(result).toMatchTypeOf<Maybe<number>[]>()
-      expect(result).toEqual([None(), Some(1), Some(2), Some(3)])
+      expect(result).toEqual([Nothing(), Just(1), Just(2), Just(3)])
     })
   })
 
@@ -61,26 +61,26 @@ describe("join and flatten", () => {
     test("join", () => {
       const result = result_result_results.map(R.join())
       expectTypeOf(result).toMatchTypeOf<Result<Result<number>>[]>()
-      expect(result).toEqual([Fail(), Some(1), Some(2), Some(Some(3))])
+      expect(result).toEqual([Failure(), Just(1), Just(2), Just(Just(3))])
     })
 
     test("flatten", () => {
       const result = result_result_results.map(R.flatten())
       expectTypeOf(result).toMatchTypeOf<Result<number>[]>()
-      expect(result).toEqual([Fail(), Some(1), Some(2), Some(3)])
+      expect(result).toEqual([Failure(), Just(1), Just(2), Just(3)])
     })
   })
 })
 
 describe("map", () => {
-  test("Some", () => {
-    const somes = [Some(1), Some(2)] as Some<number>[]
+  test("Just", () => {
+    const justs = [Just(1), Just(2)] as Just<number>[]
 
     const stringify = S.map((n: number) => String(n))
-    const result = somes.map(stringify)
+    const result = justs.map(stringify)
 
-    expectTypeOf(result).toMatchTypeOf<Some<string>[]>()
-    expect(result).toEqual([Some("1"), Some("2")])
+    expectTypeOf(result).toMatchTypeOf<Just<string>[]>()
+    expect(result).toEqual([Just("1"), Just("2")])
   })
 
   test("Maybe", () => {
@@ -90,7 +90,7 @@ describe("map", () => {
     const result = maybes.map(stringify)
 
     expectTypeOf(result).toMatchTypeOf<Maybe<string>[]>()
-    expect(result).toEqual([None(), Some("1"), Some("2")])
+    expect(result).toEqual([Nothing(), Just("1"), Just("2")])
   })
 
   test("Result", () => {
@@ -100,19 +100,19 @@ describe("map", () => {
     const result = results.map(stringify)
 
     expectTypeOf(result).toMatchTypeOf<Result<string>[]>()
-    expect(result).toEqual([Fail(), Some("1"), Some("2")])
+    expect(result).toEqual([Failure(), Just("1"), Just("2")])
   })
 })
 
 describe("chain", () => {
-  test("Some", () => {
-    const somes = [Some(1), Some(2)] as Some<number>[]
+  test("Just", () => {
+    const justs = [Just(1), Just(2)] as Just<number>[]
 
     const stringify = S.chain((n: number) => S(String(n)))
-    const result = somes.map(stringify)
+    const result = justs.map(stringify)
 
-    expectTypeOf(result).toMatchTypeOf<Some<string>[]>()
-    expect(result).toEqual([Some("1"), Some("2")])
+    expectTypeOf(result).toMatchTypeOf<Just<string>[]>()
+    expect(result).toEqual([Just("1"), Just("2")])
   })
 
   test("Maybe", () => {
@@ -122,7 +122,7 @@ describe("chain", () => {
     const result = maybes.map(stringify)
 
     expectTypeOf(result).toMatchTypeOf<Maybe<string>[]>()
-    expect(result).toEqual([None(), Some("1"), Some("2")])
+    expect(result).toEqual([Nothing(), Just("1"), Just("2")])
   })
 
   test("Result", () => {
@@ -132,19 +132,19 @@ describe("chain", () => {
     const result = results.map(stringify)
 
     expectTypeOf(result).toMatchTypeOf<Result<string>[]>()
-    expect(result).toEqual([Fail(), Some("1"), Some("2")])
+    expect(result).toEqual([Failure(), Just("1"), Just("2")])
   })
 })
 
 describe("ap", () => {
-  test("Some", () => {
-    const somes = [Some(1), Some(2)] as Some<number>[]
+  test("Just", () => {
+    const justs = [Just(1), Just(2)] as Just<number>[]
 
     const stringify = S.ap(S((n: number) => String(n)))
-    const result = somes.map(stringify)
+    const result = justs.map(stringify)
 
-    expectTypeOf(result).toMatchTypeOf<Some<string>[]>()
-    expect(result).toEqual([Some("1"), Some("2")])
+    expectTypeOf(result).toMatchTypeOf<Just<string>[]>()
+    expect(result).toEqual([Just("1"), Just("2")])
   })
 
   test("Maybe", () => {
@@ -154,7 +154,7 @@ describe("ap", () => {
     const result = maybes.map(stringify)
 
     expectTypeOf(result).toMatchTypeOf<Maybe<string>[]>()
-    expect(result).toEqual([None(), Some("1"), Some("2")])
+    expect(result).toEqual([Nothing(), Just("1"), Just("2")])
   })
 
   test("Result", () => {
@@ -164,20 +164,20 @@ describe("ap", () => {
     const result = results.map(stringify)
 
     expectTypeOf(result).toMatchTypeOf<Result<string>[]>()
-    expect(result).toEqual([Fail(), Some("1"), Some("2")])
+    expect(result).toEqual([Failure(), Just("1"), Just("2")])
   })
 })
 
 describe("traverse", () => {
-  test("Some", () => {
-    const somes = [Some(1), Some(2)] as Some<number>[]
+  test("Just", () => {
+    const justs = [Just(1), Just(2)] as Just<number>[]
 
-    const result = somes
-      .map(S.traverse((n: number) => Some(String(n))))
+    const result = justs
+      .map(S.traverse((n: number) => Just(String(n))))
       .map(S.flatten())
 
-    expectTypeOf(result).toMatchTypeOf<Some<string>[]>()
-    expect(result).toEqual([Some("1"), Some("2")])
+    expectTypeOf(result).toMatchTypeOf<Just<string>[]>()
+    expect(result).toEqual([Just("1"), Just("2")])
   })
 
   test("Maybe", () => {
@@ -188,7 +188,7 @@ describe("traverse", () => {
       .map(M.flatten())
 
     expectTypeOf(result).toMatchTypeOf<Maybe<string>[]>()
-    expect(result).toEqual([None(), Some("1"), Some("2")])
+    expect(result).toEqual([Nothing(), Just("1"), Just("2")])
   })
 
   test("Result", () => {
@@ -199,19 +199,19 @@ describe("traverse", () => {
       .map(R.flatten())
 
     expectTypeOf(result).toMatchTypeOf<Result<string>[]>()
-    expect(result).toEqual([Fail(), Some("1"), Some("2")])
+    expect(result).toEqual([Failure(), Just("1"), Just("2")])
   })
 })
 
 describe("fold", () => {
-  test("Some", () => {
-    const somes = [Some(1), Some(2)] as Some<number>[]
+  test("Just", () => {
+    const justs = [Just(1), Just(2)] as Just<number>[]
 
     const fold = S.fold(
       value => String(value),
     )
 
-    const result = somes
+    const result = justs
       .map(fold)
       .reduce((a, b) => a + b, "")
 
@@ -219,29 +219,29 @@ describe("fold", () => {
     expect(result).toBe("12")
   })
 
-  test("None", () => {
-    const nones = [None(), None()] as None[]
+  test("Nothing", () => {
+    const nothings = [Nothing(), Nothing()] as Nothing[]
 
-    const fold = None.fold(
+    const fold = Nothing.fold(
       () => "unexpected",
       () => "expected",
     )
 
-    const result = nones.map(fold)
+    const result = nothings.map(fold)
 
     expectTypeOf(result).toMatchTypeOf<string[]>()
     expect(result).toEqual(["expected", "expected"])
   })
 
-  test("Fail", () => {
-    const fails = [Fail("boop"), Fail("doop")] as Fail[]
+  test("Failure", () => {
+    const failures = [Failure("boop"), Failure("doop")] as Failure[]
 
-    const fold = Fail.fold(
+    const fold = Failure.fold(
       () => "unexpected",
       error => error.message,
     )
 
-    const result = fails.map(fold)
+    const result = failures.map(fold)
 
     expectTypeOf(result).toMatchTypeOf<string[]>()
     expect(result).toEqual(["boop", "doop"])
@@ -285,8 +285,8 @@ describe("match", () => {
     const maybes = [Maybe(), Maybe(1), Maybe(2)] as Maybe<number>[]
 
     const result = maybes.map(M.match({
-      Some: n => String(n),
-      None: () => "boop",
+      Just: n => String(n),
+      Nothing: () => "boop",
     }))
 
     expectTypeOf(result).toMatchTypeOf<string[]>()
@@ -297,8 +297,8 @@ describe("match", () => {
     const results = [Result(null, new Error("oh nooo")), Result(1), Result(2)] as Result<number>[]
 
     const result = results.map(R.match({
-      Some: n => String(n),
-      Fail: e => e.message,
+      Just: n => String(n),
+      Failure: e => e.message,
     }))
 
     expectTypeOf(result).toMatchTypeOf<string[]>()
@@ -307,14 +307,14 @@ describe("match", () => {
 })
 
 describe("calling the standalone functions directly", () => {
-  test("Some", () => {
+  test("Just", () => {
     const maybe = Maybe(1)
     expectTypeOf(maybe).toMatchTypeOf<Maybe<number>>()
 
     const mapped = M.map((n: number) => String(n))(maybe)
     expectTypeOf(mapped).toMatchTypeOf<Maybe<string>>()
 
-    assert(Some.isa()(maybe))
-    expectTypeOf(maybe).toMatchTypeOf<Some<number>>()
+    assert(Just.isa()(maybe))
+    expectTypeOf(maybe).toMatchTypeOf<Just<number>>()
   })
 })
