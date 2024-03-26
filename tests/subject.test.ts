@@ -8,8 +8,9 @@ describe("constructor and basic usage", () => {
   describe("subscribe", () => {
     it("calls the subscriber's next function when a value is emitted", () => {
       const subject = Subject()
+
       const next = fn()
-      subject.subscribe({ next, complete: () => {} })
+      subject.subscribe({ next })
 
       subject.next("test")
 
@@ -20,7 +21,7 @@ describe("constructor and basic usage", () => {
       const subject = Subject()
 
       const complete = fn()
-      subject.subscribe({ next: () => {}, complete })
+      subject.subscribe({ complete })
 
       subject.complete()
 
@@ -41,7 +42,7 @@ describe("constructor and basic usage", () => {
       const subject = Subject()
 
       const next = fn()
-      subject.subscribe({ next, complete: () => {} })
+      subject.subscribe({ next })
 
       subject.complete()
       subject.next("test")
@@ -63,7 +64,7 @@ describe("constructor and basic usage", () => {
       const subject = Subject()
 
       const complete = fn()
-      subject.subscribe({ next: () => {}, complete })
+      subject.subscribe({ complete })
 
       subject.complete()
       subject.complete()
@@ -79,13 +80,13 @@ describe("methods", () => {
       const subject = Subject()
 
       const next = fn()
-      subject.subscribe({ next, complete: () => {} })
+      subject.subscribe({ next })
 
       const mapped = subject.map(String)
       expectTypeOf(mapped).toMatchTypeOf<Subject<string>>()
 
       const next_mapped = fn()
-      mapped.subscribe({ next: next_mapped, complete: () => {} })
+      mapped.subscribe({ next: next_mapped })
 
       subject.next(1)
 
@@ -99,13 +100,13 @@ describe("methods", () => {
       const subject = Subject() as Subject<number>
 
       const next = fn()
-      subject.subscribe({ next, complete: () => {} })
+      subject.subscribe({ next })
 
       const is_even = (value: number) => value % 2 === 0
       const filtered = subject.filter(is_even)
 
       const next_filtered = fn()
-      filtered.subscribe({ next: next_filtered, complete: () => {} })
+      filtered.subscribe({ next: next_filtered })
 
       for (let i = 1; i <= 5; i++) {
         subject.next(i)
@@ -122,7 +123,7 @@ describe("methods", () => {
       const filtered = subject.filter(is_string)
 
       const next = fn()
-      filtered.subscribe({ next, complete: () => {} })
+      filtered.subscribe({ next })
 
       subject.next(1)
       subject.next("hello")
@@ -138,7 +139,7 @@ describe("methods", () => {
       const filtered = subject.filter(Some.isa)
 
       const next = fn()
-      filtered.subscribe({ next, complete: () => {} })
+      filtered.subscribe({ next })
 
       subject.next(Maybe())
       subject.next(Maybe(1))
@@ -156,7 +157,7 @@ describe("methods", () => {
       const filtered = subject.filter(is_some)
 
       const next = fn()
-      filtered.subscribe({ next, complete: () => {} })
+      filtered.subscribe({ next })
 
       subject.next(Maybe())
       subject.next(Maybe(1))
@@ -177,7 +178,7 @@ describe("methods", () => {
       expectTypeOf(merged).toMatchTypeOf<Subject<number | string>>()
 
       const next = fn()
-      merged.subscribe({ next, complete: () => {} })
+      merged.subscribe({ next })
 
       subject_of_number.next(1)
       expect(next).toHaveBeenCalledWith(1)
@@ -199,7 +200,7 @@ describe("async usage", () => {
 
     const next = fn().mockImplementation(() => setTimeout(() => resolve_next(), 50))
 
-    subject.subscribe({ next, complete: () => {} })
+    subject.subscribe({ next })
 
     subject.next("test")
 

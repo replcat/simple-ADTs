@@ -186,14 +186,15 @@ const constructors = (() => {
 
   Subject.prototype.subscribe = function(subscriber) {
     assert(typeof subscriber === "object", `subscribe expects an object (got ${subscriber})`)
-    assert(typeof subscriber.next === "function", `subscriber.next must be a function (got ${subscriber.next})`)
-    assert(typeof subscriber.complete === "function", `subscriber.complete must be a function (got ${subscriber.complete})`)
+    assert(subscriber.next || subscriber.complete, `expected at least one of next or complete`)
+    if (subscriber.next) assert(typeof subscriber.next === "function", `subscriber.next must be a function (got ${subscriber.next})`)
+    if (subscriber.complete) assert(typeof subscriber.complete === "function", `subscriber.complete must be a function (got ${subscriber.complete})`)
     if (!this.is_completed) {
       this.subscribers?.push(subscriber)
-      if (this.value !== undefined) {
+      if (this.value !== undefined && "next" in subscriber) {
         subscriber.next(this.value)
       }
-    } else {
+    } else if ("complete" in subscriber) {
       subscriber.complete()
     }
   }
@@ -202,14 +203,18 @@ const constructors = (() => {
     assert(value != null, `next expects a value (got ${value})`)
     if (!this.is_completed) {
       this.value = value
-      this.subscribers?.forEach(subscriber => subscriber.next(value))
+      this.subscribers
+        ?.filter(subscriber => subscriber.next)
+        .forEach(subscriber => subscriber.next(value))
     }
   }
 
   Subject.prototype.complete = function() {
     if (!this.is_completed) {
       this.is_completed = true
-      this.subscribers?.forEach(subscriber => subscriber.complete())
+      this.subscribers
+        ?.filter(subscriber => subscriber.complete)
+        .forEach(subscriber => subscriber.complete())
       this.subscribers = []
     }
   }

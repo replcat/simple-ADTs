@@ -175,10 +175,9 @@ interface Fail<T = never> extends Base<T> {
   fold<E>(_: any, on_fail: (error: Error) => E): E
 }
 
-interface Subscriber<T> {
-  next: (value: T) => void
-  complete: () => void
-}
+type Subscriber<T> =
+  | { next: (value: T) => void; complete?: () => void }
+  | { next?: (value: T) => void; complete: () => void }
 
 interface Subject<T = unknown> {
   name: "Subject"
