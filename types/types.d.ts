@@ -52,11 +52,17 @@ type Constructors = {
 
   None:
     & (() => None)
-    & { isa: () => (instance: Base<any>) => instance is None }
+    & {
+      isa: () => (instance: Base<any>) => instance is None
+      fold: <E>(_: any, on_none: () => E) => (none: None) => E
+    }
 
   Fail:
     & ((error?: string | Error, cause?: unknown) => Fail)
-    & { isa: () => (instance: Base<any>) => instance is None }
+    & {
+      isa: () => (instance: Base<any>) => instance is None
+      fold: <E>(_: any, on_fail: (error: Error) => E) => (fail: Fail) => E
+    }
 
   Subject: <T>(value?: T) => Subject<T>
 }

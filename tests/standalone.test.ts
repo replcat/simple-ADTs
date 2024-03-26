@@ -219,6 +219,34 @@ describe("fold", () => {
     expect(result).toBe("12")
   })
 
+  test("None", () => {
+    const nones = [None(), None()] as None[]
+
+    const fold = None.fold(
+      () => "unexpected",
+      () => "expected",
+    )
+
+    const result = nones.map(fold)
+
+    expectTypeOf(result).toMatchTypeOf<string[]>()
+    expect(result).toEqual(["expected", "expected"])
+  })
+
+  test("Fail", () => {
+    const fails = [Fail("boop"), Fail("doop")] as Fail[]
+
+    const fold = Fail.fold(
+      () => "unexpected",
+      error => error.message,
+    )
+
+    const result = fails.map(fold)
+
+    expectTypeOf(result).toMatchTypeOf<string[]>()
+    expect(result).toEqual(["boop", "doop"])
+  })
+
   test("Maybe", () => {
     const maybes = [Maybe(), Maybe(1), Maybe(2)] as Maybe<number>[]
 
