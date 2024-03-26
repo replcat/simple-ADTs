@@ -207,9 +207,10 @@ type Pipe = {
 }
 
 type Curry<A = any, B = any, C = any, D = any, E = any, F = any, G = any> = {
-  <A, B, C>(ab: (a: A, b: B) => C): (a: A) => (b: B) => C
-  <A, B, C, D>(abc: (a: A, b: B, c: C) => D): (a: A) => Curry<B, C, D>
-  <A, B, C, D, E>(abcd: (a: A, b: B, c: C, d: D) => E): (a: A) => Curry<B, C, D, E>
-  <A, B, C, D, E, F>(abcde: (a: A, b: B, c: C, d: D, e: E) => F): (a: A) => Curry<B, C, D, E, F>
-  <A, B, C, D, E, F, G>(abcdef: (a: A, b: B, c: C, d: D, e: E, f: F) => G): (a: A) => Curry<B, C, D, E, F, G>
+  <A, B>(ab: (a: A) => B): ((a: A) => B) & (() => (a: A) => B)
+  <A, B, C>(abc: (a: A, b: B) => C): ((a: A, b: B) => C) & ((a: A) => (b: B) => C)
+  <A, B, C, D>(abcd: (a: A, b: B, c: C) => D): ((a: A, b: B, c: C) => D) & ((a: A) => Curry<B, C, D>)
+  <A, B, C, D, E>(abcde: (a: A, b: B, c: C, d: D) => E): ((a: A, b: B, c: C, d: D) => E) & ((a: A) => Curry<B, C, D, E>)
+  <A, B, C, D, E, F>(abcdef: (a: A, b: B, c: C, d: D, e: E) => F): ((a: A, b: B, c: C, d: D, e: E) => F) & ((a: A) => Curry<B, C, D, E, F>)
+  <A, B, C, D, E, F, G>(abcdefg: (a: A, b: B, c: C, d: D, e: E, f: F) => G): ((a: A, b: B, c: C, d: D, e: E, f: F) => G) & ((a: A) => Curry<B, C, D, E, F, G>)
 }

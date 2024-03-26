@@ -1,3 +1,12 @@
+/** @type {Pipe} */
+var pipe = (...args) => value => args.reduce((acc, fn) => fn(acc), value)
+
+/** @type {Curry} */
+var curry = (fn, ...args) =>
+  args.length >= fn.length
+    ? fn(...args)
+    : curry.bind(null, fn, ...args)
+
 /** @type {Constructors} */
 // @ts-ignore: the following block is not type checked
 const constructors = (() => {
@@ -151,14 +160,16 @@ const constructors = (() => {
       ? instance[method](...params)
       : instance
 
-  for (const method of ["ap", "chain", "flatten", "join", "map", "traverse", "fold", "match"]) {
-    Some[method] = delegate_to_instance(method)
-    Maybe[method] = delegate_to_instance(method)
-    Result[method] = delegate_to_instance(method)
-  }
-
   for (const type of [Some, None, Fail, Maybe, Result]) {
     type["isa"] = () => instance => instance.isa(type)
+    type["join"] = delegate_to_instance("join")
+    type["flatten"] = delegate_to_instance("flatten")
+    type["ap"] = delegate_to_instance("ap")
+    type["chain"] = delegate_to_instance("chain")
+    type["map"] = delegate_to_instance("map")
+    type["traverse"] = delegate_to_instance("traverse")
+    type["fold"] = delegate_to_instance("fold")
+    type["match"] = delegate_to_instance("match")
   }
 
   function Subject(value) {
@@ -252,15 +263,6 @@ const constructors = (() => {
     Subject,
   }
 })()
-
-/** @type {Pipe} */
-const pipe = (...args) => value => args.reduce((acc, fn) => fn(acc), value)
-
-/** @type {Curry} */
-const curry = (fn, ...args) =>
-  args.length >= fn.length
-    ? fn(...args)
-    : curry.bind(null, fn, ...args)
 
 /**
  * @param {string | undefined} stack

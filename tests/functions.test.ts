@@ -14,8 +14,7 @@ describe("curry", () => {
       expect(add_one(2)).toBe(3)
     })
 
-    it("doesn't affect uncurried usage (but without types)", () => {
-      // @ts-expect-error
+    it("doesn't affect uncurried usage", () => {
       expect(add(1, 2)).toBe(3)
     })
   })
