@@ -294,7 +294,7 @@ describe("match", () => {
   })
 
   test("Result", () => {
-    const results = [Result(null, new Error("oh nooo")), Result(1), Result(2)] as Result<number>[]
+    const results = [Result(new Error("oh nooo")), Result(1), Result(2)] as Result<number>[]
 
     const result = results.map(R.match({
       Just: n => String(n),

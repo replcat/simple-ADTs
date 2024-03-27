@@ -11,6 +11,9 @@ var curry = (fn, ...args) =>
 // @ts-ignore: the following block is not type checked
 const constructors = (() => {
   function Outcome(value) {
+    if (value == null) return Nothing()
+    if (value instanceof Error) return Failure(value)
+    if (value instanceof Failure) return value
     return Just(value)
   }
 
@@ -96,31 +99,32 @@ const constructors = (() => {
   }
 
   Outcome.prototype.unwrap_or = function(value) {
-    if (value == null) throw new TypeError(`unwrap_or expects a value (got ${value})`)
+    assert(value != null, `unwrap_or expects a value (got ${value})`)
     if ("value" in this && this instanceof Just) return this.value
     return value
   }
 
   Outcome.prototype.unwrap_or_else = function(fn) {
-    if (typeof fn !== "function") throw new TypeError(`unwrap_or_else expects a function (got ${fn})`)
+    assert(typeof fn === "function", `unwrap_or_else expects a function (got ${fn})`)
     if ("value" in this && this instanceof Just) return this.value
     return fn()
   }
 
   function Maybe(value) {
-    assert(!(value instanceof Failure), `${Maybe.name} cannot be constructed with a Failure`)
+    if (value == null) return Nothing()
     if (value instanceof Nothing) return value
-    return value == null ? Nothing() : Just(value)
+    return Just(value)
   }
 
-  function Result(value, on_null) {
-    assert(!(value instanceof Nothing), `${Result.name} cannot be constructed with a Nothing`)
+  function Result(value) {
+    if (value == null) return Failure()
+    if (value instanceof Error) return Failure(value)
     if (value instanceof Failure) return value
-    return value == null ? Failure(on_null) : Just(value)
+    return Just(value)
   }
 
   function Just(value) {
-    assert(value != null, `${Just.name}.value cannot be null or undefined.`)
+    assert(value != null && !(value instanceof Error), `Just expects a value (got ${value})`)
     return Object.create(Just.prototype, {
       name: { value: "Just" },
       value: { value, enumerable: true },
@@ -139,12 +143,14 @@ const constructors = (() => {
   Nothing.prototype = Object.create(Outcome.prototype)
   Nothing.prototype.constructor = Nothing
 
-  function Failure(error, cause) {
+  function Failure(error) {
+    if (error instanceof Failure) return error
+
     if (!(error instanceof Error)) {
       error = new Error(error ?? "(unspecified)")
       error.stack = trim_stack(error.stack)
     }
-    if (cause) error.cause = cause
+
     return Object.create(Failure.prototype, {
       name: { value: "Failure" },
       error: { value: error, enumerable: true },
@@ -160,7 +166,7 @@ const constructors = (() => {
       ? instance[method](...params)
       : instance
 
-  for (const type of [Just, Nothing, Failure, Maybe, Result]) {
+  for (const type of [Outcome, Just, Nothing, Failure, Maybe, Result]) {
     type["isa"] = () => instance => instance.isa(type)
     type["join"] = delegate_to_instance("join")
     type["flatten"] = delegate_to_instance("flatten")

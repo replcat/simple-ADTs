@@ -252,7 +252,7 @@ describe("with other types", () => {
     const next = fn()
     subject.subscribe({ next, complete: () => {} })
 
-    subject.next(Result(null, "boo"))
+    subject.next(Result(new Error("boo")))
 
     expect(next).toHaveBeenCalledWith(Failure("boo"))
     expect(subject.value).toEqual(Failure("boo"))

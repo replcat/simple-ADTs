@@ -1,7 +1,23 @@
 type Innermost<T> = T extends Outcome<infer U> ? Innermost<U> : T
 
 type Constructors = {
-  Outcome: <T>(value: T) => Outcome<NonNullable<T>>
+  Outcome:
+    & (<T>(value?: T | Error) => Outcome<T extends Error ? never : NonNullable<T>>)
+    & {
+      isa: () => <T>(instance: Outcome<T>) => instance is Outcome<T>
+      ap: <T, U>(fn: Outcome<(value: T) => U>) => (outcome: Outcome<T>) => Outcome<U>
+      chain: <T, F extends Outcome<any>>(fn: (value: Innermost<T>) => F) => (outcome: Outcome<T>) => F
+      flatten: () => <T>(outcome: Outcome<T>) => Outcome<Innermost<T>>
+      join: () => <T>(outcome: Outcome<Outcome<T>>) => Outcome<T>
+      map: <T, U>(fn: (value: T) => U) => (outcome: Outcome<T>) => Outcome<U>
+      traverse: <T, F extends Outcome<any>>(fn: (value: T) => F) => (outcome: Outcome<T>) => Outcome<F>
+      fold: <T, U, E>(on_value: (value?: T) => U, on_error?: (error: Error) => E) => (outcome: Outcome<T>) => U | E
+      match: <T, J, N, F>(matcher: {
+        Just: (value: T) => J
+        Nothing: () => N
+        Failure: (error: Error) => F
+      }) => (outcome: Outcome<T>) => Consolidate<J | N | F>
+    }
 
   Maybe:
     & (<T>(value?: T) => Maybe<NonNullable<T>>)
@@ -14,14 +30,14 @@ type Constructors = {
       map: <T, U>(fn: (value: T) => U) => (maybe: Maybe<T>) => Maybe<U>
       traverse: <T, F extends Maybe<any>>(fn: (value: T) => F) => (maybe: Maybe<T>) => Maybe<F>
       fold: <T, U, E>(on_value: (value?: T) => U, on_nothing?: () => E) => (maybe: Maybe<T>) => U | E
-      match: <T, N>(matcher: {
-        Just: (value: T) => N
+      match: <T, J, N>(matcher: {
+        Just: (value: T) => J
         Nothing: () => N
-      }) => (maybe: Maybe<T>) => N
+      }) => (maybe: Maybe<T>) => Consolidate<J | N>
     }
 
   Result:
-    & (<T>(value?: T, on_null?: string | Error) => Result<NonNullable<T>>)
+    & (<T>(value?: T | Error) => Result<T extends Error ? never : NonNullable<T>>)
     & {
       isa: () => <T>(instance: Outcome<T>) => instance is Result<T>
       ap: <T, U>(fn: Result<(value: T) => U>) => (result: Result<T>) => Result<U>
@@ -31,10 +47,10 @@ type Constructors = {
       map: <T, U>(fn: (value: T) => U) => (result: Result<T>) => Result<U>
       traverse: <T, F extends Result<any>>(fn: (value: T) => F) => (result: Result<T>) => Result<F>
       fold: <T, U, E>(on_value: (value: T) => U, on_error?: (error: Error) => E) => (result: Result<T>) => U | E
-      match: <T, F>(matcher: {
-        Just: (value: T) => F
+      match: <T, J, F>(matcher: {
+        Just: (value: T) => J
         Failure: (error: Error) => F
-      }) => (result: Result<T>) => F
+      }) => (result: Result<T>) => Consolidate<J | F>
     }
 
   Just:

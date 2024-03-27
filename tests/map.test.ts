@@ -59,7 +59,7 @@ describe("on Result", () => {
   })
 
   test("returns Failure when mapping over Failure", () => {
-    let instance = Result(null, "test")
+    let instance = Result()
     let mapped = instance.map(() => "test")
 
     expect(mapped).toBeInstanceOf(Failure)

@@ -260,7 +260,7 @@ describe("chaining over non-valued types", () => {
   })
 
   test("chaining over a Result of Failure", () => {
-    const stringify_or_failure = (n: number) => Result(String(n) || null, new Error("wuh uh"))
+    const stringify_or_failure = (n: number) => Result(n != null ? String(n) : new Error())
 
     const instance = Result() as Result<number>
     const chained = instance.chain(stringify_or_failure)

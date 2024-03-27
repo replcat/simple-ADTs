@@ -81,7 +81,7 @@ describe("the Result constructor", () => {
     assert(result_nothing.isa(Failure))
     expect(result_nothing.error).toMatchInlineSnapshot(`[Error: (unspecified)]`)
 
-    let result_nothing_with_error = Result(null, "test")
+    let result_nothing_with_error = Result(new Error("test"))
     expectTypeOf(result_nothing_with_error).toMatchTypeOf<Result<unknown>>()
     assert(result_nothing_with_error.isa(Failure))
     expect(result_nothing_with_error.error).toMatchInlineSnapshot(`[Error: test]`)
@@ -97,7 +97,7 @@ describe("type guards", () => {
     { Type: Result, of: Nothing, narrows_to: [Result, Failure] },
   ])("narrowing $Type of $of to $narrows_to", ({ Type, of, narrows_to }) => {
     // @ts-ignore
-    let instance = of === Nothing ? Type() : Type("test")
+    let instance = (of === Nothing || of === Failure) ? Type() : Type("test")
 
     for (let target of narrows_to) {
       assert(

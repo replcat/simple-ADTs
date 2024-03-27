@@ -28,7 +28,7 @@ test("Result of Just", () => {
 })
 
 test("Result of Failure", () => {
-  const result = Result(null, "boo")
+  const result = Result(new Error("boo"))
   const mapped = result.fold(value => String(value), error => error.message)
 
   expectTypeOf(mapped).toEqualTypeOf<string>()
