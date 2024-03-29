@@ -4,6 +4,30 @@ import { assert, describe, expect, expectTypeOf } from "vitest"
 import { constructors } from "../lib.js"
 const { Outcome, Maybe, Result, Just, Nothing, Failure } = constructors
 
+describe("the Outcome constructor", () => {
+  const it = test.prop({
+    value: fc.oneof(
+      fc.anything(),
+      fc.string().map(s => new Error(s)),
+    ),
+  })
+
+  it("accepts any type", ({ value }) => {
+    let instance = Outcome(value)
+    expect(instance).toBeInstanceOf(Outcome)
+
+    if (value == null) {
+      assert(instance.isa(Nothing))
+    } else if (value instanceof Error) {
+      assert(instance.isa(Failure))
+      expect(instance.error).toBe(value)
+    } else {
+      assert(instance.isa(Just))
+      expect(instance.value).toBe(value)
+    }
+  })
+})
+
 describe("the Just constructor", () => {
   test.prop([
     fc.anything().filter(value => value != null),

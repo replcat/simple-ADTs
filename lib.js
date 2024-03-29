@@ -7,6 +7,12 @@ var curry = (fn, ...args) =>
     ? fn(...args)
     : curry.bind(null, fn, ...args)
 
+function inspect_type(variable) {
+  if (variable === null) return "null"
+  if (variable instanceof Object) return variable.constructor.name
+  return typeof variable
+}
+
 /** @type {Constructors} */
 // @ts-ignore: the following block is not type checked
 const constructors = (() => {
@@ -41,9 +47,9 @@ const constructors = (() => {
 
   /**  @this {globalThis.Outcome} */
   Outcome.prototype.ap = function(wrapped_fn) {
-    assert(wrapped_fn instanceof Outcome, `expected a wrapped type (got ${wrapped_fn})`)
+    assert(wrapped_fn instanceof Outcome, `expected a wrapped type (got ${inspect_type(wrapped_fn)})`)
     if (!("value" in wrapped_fn)) return wrapped_fn
-    assert(typeof wrapped_fn.value === "function", `ap expects a function (got ${wrapped_fn.value})`)
+    assert(typeof wrapped_fn.value === "function", `ap expects a function (got ${inspect_type(wrapped_fn.value)})`)
     return ("value" in this)
       ? this.constructor(wrapped_fn.value(this.value))
       : this
@@ -63,7 +69,7 @@ const constructors = (() => {
   }
 
   Outcome.prototype.traverse = function(fn) {
-    assert(typeof fn === "function", `traverse expects a function (got ${fn})`)
+    assert(typeof fn === "function", `traverse expects a function (got ${inspect_type(fn)})`)
     if (!(this instanceof Just)) return this
     return (this["value"] instanceof Just)
       ? Just(this["value"]["traverse"](fn))
@@ -71,7 +77,7 @@ const constructors = (() => {
   }
 
   Outcome.prototype.chain = function(fn) {
-    assert(typeof fn === "function", `chain expects a function (got ${fn})`)
+    assert(typeof fn === "function", `chain expects a function (got ${inspect_type(fn)})`)
     if (!(this instanceof Just)) return this
     return (this["value"] instanceof Just)
       ? Just(this["value"]["chain"](fn))
@@ -99,13 +105,13 @@ const constructors = (() => {
   }
 
   Outcome.prototype.unwrap_or = function(value) {
-    assert(value != null, `unwrap_or expects a value (got ${value})`)
+    assert(value != null, `unwrap_or expects a value (got ${inspect_type(value)})`)
     if ("value" in this && this instanceof Just) return this.value
     return value
   }
 
   Outcome.prototype.unwrap_or_else = function(fn) {
-    assert(typeof fn === "function", `unwrap_or_else expects a function (got ${fn})`)
+    assert(typeof fn === "function", `unwrap_or_else expects a function (got ${inspect_type(fn)})`)
     if ("value" in this && this instanceof Just) return this.value
     return fn()
   }
@@ -124,7 +130,7 @@ const constructors = (() => {
   }
 
   function Just(value) {
-    assert(value != null && !(value instanceof Error), `Just expects a value (got ${value})`)
+    assert(value != null && !(value instanceof Error), `Just expects a value (got ${inspect_type(value)})`)
     return Object.create(Just.prototype, {
       name: { value: "Just" },
       value: { value, enumerable: true },
@@ -190,10 +196,10 @@ const constructors = (() => {
   Subject.prototype.constructor = Subject
 
   Subject.prototype.subscribe = function(subscriber) {
-    assert(typeof subscriber === "object", `subscribe expects an object (got ${subscriber})`)
+    assert(typeof subscriber === "object", `subscribe expects an object (got ${inspect_type(subscriber)})`)
     assert(subscriber.next || subscriber.complete, `expected at least one of next or complete`)
-    if (subscriber.next) assert(typeof subscriber.next === "function", `subscriber.next must be a function (got ${subscriber.next})`)
-    if (subscriber.complete) assert(typeof subscriber.complete === "function", `subscriber.complete must be a function (got ${subscriber.complete})`)
+    if (subscriber.next) assert(typeof subscriber.next === "function", `subscriber.next must be a function (got ${inspect_type(subscriber.next)})`)
+    if (subscriber.complete) assert(typeof subscriber.complete === "function", `subscriber.complete must be a function (got ${inspect_type(subscriber.complete)})`)
     if (!this.is_completed) {
       this.subscribers?.push(subscriber)
       if (this.value !== undefined && "next" in subscriber) {
@@ -292,4 +298,4 @@ function assert(condition, message) {
   }
 }
 
-export { constructors, curry, pipe }
+export { constructors, curry, inspect_type, pipe }
