@@ -80,7 +80,37 @@ type Constructors = {
       fold: <E>(_: any, on_failure: (error: Error) => E) => (failure: Failure) => E
     }
 
-  Subject: <T>(value?: T) => Subject<T>
+  Subject: {
+    <O extends Outcome>(init?: Nothing): Subject<
+      O extends Nothing<never> ? Nothing<never>
+        : O extends Maybe<infer U> ? Maybe<U>
+        : O extends Outcome<infer U> ? Outcome<U>
+        : O
+    >
+
+    <O extends Outcome>(init: Error | Failure): Subject<
+      O extends Failure<never> ? Failure<never>
+        : O extends Result<infer U> ? Result<U>
+        : O extends Outcome<infer U> ? Outcome<U>
+        : O
+    >
+
+    <O extends Just>(init: O): Subject<Just<Inner<O>>>
+
+    <O extends Maybe>(init: O): Subject<
+      O extends Maybe<infer U> ? Maybe<U>
+        : O extends Outcome<infer U> ? Outcome<U>
+        : O
+    >
+
+    <O extends Result>(init: O): Subject<
+      O extends Result<infer U> ? Result<U>
+        : O extends Outcome<infer U> ? Outcome<U>
+        : O
+    >
+
+    <T extends unknown>(init: T): Subject<Just<T>>
+  }
 }
 
 /**
@@ -173,7 +203,7 @@ type Result<T = unknown> = Just<T> | Failure<T>
  */
 interface Just<T = unknown> extends Outcome<T> {
   name: "Just"
-  value: NonNullable<T>
+  value: T
   fold<U>(fn: (value: T) => U): U
 }
 
@@ -197,26 +227,21 @@ interface Failure<T = never> extends Outcome<T> {
   fold<E>(_: any, on_failure: (error: Error) => E): E
 }
 
-type Subscriber<T> =
-  | { next: (value: T) => void; complete?: () => void }
-  | { next?: (value: T) => void; complete: () => void }
+type Subscriber<O> =
+  | { next: (next: O) => void; complete?: () => void }
+  | { next?: (next: O) => void; complete: () => void }
 
-interface Subject<T = unknown> {
-  name: "Subject"
-  subscribers: Subscriber<T>[]
-  value?: T
-  is_completed: boolean
+type Subject<O extends Outcome = Outcome> = O & {
+  previous: O
 
-  subscribe: (subscriber: Subscriber<T>) => void
-  next: (value: T) => void
-  complete: () => void
+  completed: boolean
+  complete(): void
 
-  // overload to support narrowing if the predicate is a type guard
-  filter<U extends T>(predicate: (value: T) => value is U): Subject<U>
-  filter(predicate: (value: T) => boolean): Subject<T>
+  subscribers: Array<Subscriber<O>>
+  subscribe: (subscriber: Subscriber<O>) => void
 
-  map: <U>(fn: (value: T) => U) => Subject<U>
-  merge: <U>(other: Subject<U>) => Subject<T | U>
+  next<Self extends Outcome>(this: Self, next: O): void
+  next<Self extends Nothing>(this: Self): void
 }
 
 type Pipe = {

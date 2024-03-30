@@ -184,86 +184,71 @@ const constructors = (() => {
     type["match"] = delegate_to_instance("match")
   }
 
-  function Subject(value) {
-    if (!(this instanceof Subject)) return new Subject(value)
-    this.name = "Subject"
-    this.subscribers = []
-    this.value = value
-    this.is_completed = false
-  }
+  function Subject(init = Nothing()) {
+    let inner
 
-  Subject.prototype = Object.create(Outcome.prototype)
-  Subject.prototype.constructor = Subject
-
-  Subject.prototype.subscribe = function(subscriber) {
-    assert(typeof subscriber === "object", `subscribe expects an object (got ${inspect_type(subscriber)})`)
-    assert(subscriber.next || subscriber.complete, `expected at least one of next or complete`)
-    if (subscriber.next) assert(typeof subscriber.next === "function", `subscriber.next must be a function (got ${inspect_type(subscriber.next)})`)
-    if (subscriber.complete) assert(typeof subscriber.complete === "function", `subscriber.complete must be a function (got ${inspect_type(subscriber.complete)})`)
-    if (!this.is_completed) {
-      this.subscribers?.push(subscriber)
-      if (this.value !== undefined && "next" in subscriber) {
-        subscriber.next(this.value)
-      }
-    } else if ("complete" in subscriber) {
-      subscriber.complete()
-    }
-  }
-
-  Subject.prototype.next = function(value) {
-    assert(value != null, `next expects a value (got ${value})`)
-    if (!this.is_completed) {
-      this.value = value
-      this.subscribers
-        ?.filter(subscriber => subscriber.next)
-        .forEach(subscriber => subscriber.next(value))
-    }
-  }
-
-  Subject.prototype.complete = function() {
-    if (!this.is_completed) {
-      this.is_completed = true
-      this.subscribers
-        ?.filter(subscriber => subscriber.complete)
-        .forEach(subscriber => subscriber.complete())
-      this.subscribers = []
-    }
-  }
-
-  Subject.prototype.map = function(fn) {
-    const new_subject = Subject()
-    this.subscribe({
-      next: value => new_subject.next(fn(value)),
-      complete: () => new_subject.complete(),
-    })
-    return new_subject
-  }
-
-  Subject.prototype.filter = function(predicate) {
-    const new_subject = Subject()
-    this.subscribe({
-      next: value => {
-        if (predicate(value)) {
-          new_subject.next(value)
-        }
+    const instance = Object.create(Subject.prototype, {
+      [Symbol.toStringTag]: {
+        get: () => instance.completed ? "∅" : String(instance.subscribers.length),
       },
-      complete: () => new_subject.complete(),
+
+      value: { enumerable: false, configurable: true },
+      error: { enumerable: false, configurable: true },
+      completed: { value: false, configurable: true },
+      previous: { value: init, configurable: true },
+
+      complete: {
+        configurable: true,
+        value: () => {
+          for (const subscriber of instance.subscribers) {
+            if (subscriber.complete) subscriber.complete()
+          }
+          Object.defineProperties(instance, {
+            subscribers: { value: [] },
+            completed: { value: true },
+            complete: { value: () => {} },
+          })
+        },
+      },
+
+      subscribers: { value: [], configurable: true },
+      subscribe: {
+        value: subscriber => {
+          assert(typeof subscriber === "object", `subscribe expects an object (got ${inspect_type(subscriber)})`)
+          assert(subscriber.next || subscriber.complete, `subscribe expects at least one handler`)
+          assert(!subscriber.next || typeof subscriber.next === "function", `subscribe expects next handler to be a function (got ${inspect_type(subscriber.next)})`)
+          assert(!subscriber.complete || typeof subscriber.complete === "function", `subscribe expects complete handler to be a function (got ${inspect_type(subscriber.complete)})`)
+          instance.subscribers.push(subscriber)
+        },
+      },
+
+      next: {
+        value: next => {
+          inner = next instanceof Outcome ? next : Outcome(next)
+          Object.defineProperties(instance, {
+            previous: { value: inner, configurable: true },
+            value: { value: "value" in inner ? inner.value : undefined, enumerable: "value" in inner, configurable: true },
+            error: { value: "error" in inner ? inner.error : undefined, enumerable: "error" in inner, configurable: true },
+          })
+          for (const subscriber of instance.subscribers) {
+            if (subscriber.next) subscriber.next(inner)
+          }
+        },
+      },
     })
-    return new_subject
+
+    instance.next(init)
+
+    return instance
   }
 
-  Subject.prototype.merge = function(other) {
-    const new_subject = Subject()
-    this.subscribe({
-      next: value => new_subject.next(value),
-      complete: () => new_subject.complete(),
-    })
-    other.subscribe({
-      next: value => new_subject.next(value),
-      complete: () => new_subject.complete(),
-    })
-    return new_subject
-  }
+  const delegate_to_last = method => (...params) => subject =>
+    method in subject.last
+      ? subject.last[method](...params)
+      : subject.last
+
+  Subject.prototype = Object.create(Object.prototype)
+  Subject.prototype.constructor = Subject
 
   return {
     Outcome,

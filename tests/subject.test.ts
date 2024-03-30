@@ -1,274 +1,313 @@
-import { assert, describe, expect, expectTypeOf, it, test, vi } from "vitest"
-const { fn } = vi
+import { describe, expect, expectTypeOf, it, test } from "vitest"
 
 import { constructors } from "../lib.js"
 const { Subject, Outcome, Maybe, Result, Just, Nothing, Failure } = constructors
 
-describe("constructor and basic usage", () => {
-  describe("subscribe", () => {
-    it("calls the subscriber's next function when a value is emitted", () => {
+describe("the type constructor", () => {
+  describe("constructing an initially valueless Subject", () => {
+    it("initialises with a Nothing", () => {
+      const subject = Subject() as Subject
+      expect(subject.previous).toBeInstanceOf(Nothing)
+    })
+
+    it("defaults to an Outcome of unknown", () => {
       const subject = Subject()
-
-      const next = fn()
-      subject.subscribe({ next })
-
-      subject.next("test")
-
-      expect(next).toHaveBeenCalledWith("test")
+      expectTypeOf(subject).toEqualTypeOf<Subject<Outcome<unknown>>>()
     })
 
-    it("calls the subscriber's complete function when complete is called", () => {
-      const subject = Subject()
-
-      const complete = fn()
-      subject.subscribe({ complete })
-
-      subject.complete()
-
-      expect(complete).toHaveBeenCalled()
-    })
-  })
-
-  describe("next", () => {
-    it("updates the subject's value", () => {
-      const subject = Subject()
-
-      subject.next("test")
-
-      expect(subject.value).toBe("test")
+    it("can be annotated to an Outcome of an explicit inner type", () => {
+      const subject: Subject<Outcome<string>> = Subject()
+      expectTypeOf(subject).toEqualTypeOf<Subject<Outcome<string>>>()
     })
 
-    it("does not call the subscriber's next function after complete is called", () => {
-      const subject = Subject()
+    it("can be annotated to a Maybe", () => {
+      const subject: Subject<Maybe<string>> = Subject()
+      expectTypeOf(subject).toEqualTypeOf<Subject<Maybe<string>>>()
+    })
 
-      const next = fn()
-      subject.subscribe({ next })
+    it("can be annotated to a Nothing", () => {
+      const subject: Subject<Nothing> = Subject()
+      expectTypeOf(subject).toEqualTypeOf<Subject<Nothing>>()
+    })
 
-      subject.complete()
-      subject.next("test")
-
-      expect(next).not.toHaveBeenCalled()
+    it("cannot be annotated to form other types", () => {
+      // @ts-expect-error
+      const of_result: Subject<Result<string>> = Subject()
+      // @ts-expect-error
+      const of_just: Subject<Just<string>> = Subject()
+      // @ts-expect-error
+      const of_failure: Subject<Failure> = Subject()
+      // @ts-expect-error
+      const of_unknown: Subject<unknown> = Subject()
     })
   })
 
-  describe("complete", () => {
-    it("sets is_completed to true", () => {
-      const subject = Subject()
-
-      subject.complete()
-
-      expect(subject.is_completed).toBe(true)
+  describe("constructing a Subject from an initial Nothing", () => {
+    it("initialises with a Nothing", () => {
+      const subject = Subject() as Subject
+      expect(subject.previous).toBeInstanceOf(Nothing)
     })
 
-    it("does not call the subscriber's complete function again after complete is called", () => {
-      const subject = Subject()
-
-      const complete = fn()
-      subject.subscribe({ complete })
-
-      subject.complete()
-      subject.complete()
-
-      expect(complete).toHaveBeenCalledTimes(1)
+    it("defaults to an Outcome of unknown", () => {
+      const subject = Subject(Nothing())
+      expectTypeOf(subject).toEqualTypeOf<Subject<Outcome<unknown>>>()
     })
-  })
-})
 
-describe("methods", () => {
-  describe("map", () => {
-    it("transforms emitted values", () => {
-      const subject = Subject()
+    it("can be annotated to an Outcome of an explicit inner type", () => {
+      const subject: Subject<Outcome<string>> = Subject(Nothing())
+      expectTypeOf(subject).toEqualTypeOf<Subject<Outcome<string>>>()
+    })
 
-      const next = fn()
-      subject.subscribe({ next })
+    it("can be annotated to a Maybe", () => {
+      const subject: Subject<Maybe<string>> = Subject(Nothing())
+      expectTypeOf(subject).toEqualTypeOf<Subject<Maybe<string>>>()
+    })
 
-      const mapped = subject.map(String)
-      expectTypeOf(mapped).toMatchTypeOf<Subject<string>>()
+    it("can be annotated to a Nothing", () => {
+      const subject: Subject<Nothing> = Subject(Nothing())
+      expectTypeOf(subject).toEqualTypeOf<Subject<Nothing>>()
+    })
 
-      const next_mapped = fn()
-      mapped.subscribe({ next: next_mapped })
-
-      subject.next(1)
-
-      expect(next).toHaveBeenCalledWith(1)
-      expect(next_mapped).toHaveBeenCalledWith("1")
+    it("cannot be annotated to form other types", () => {
+      // @ts-expect-error
+      const of_result: Subject<Result<string>> = Subject(Nothing())
+      // @ts-expect-error
+      const of_just: Subject<Just<string>> = Subject(Nothing())
+      // @ts-expect-error
+      const of_failure: Subject<Failure> = Subject(Nothing())
+      // @ts-expect-error
+      const of_unknown: Subject<unknown> = Subject(Nothing())
     })
   })
 
-  describe("filter", () => {
-    it("only emits values which satisfy the predicate", () => {
-      const subject = Subject() as Subject<number>
-
-      const next = fn()
-      subject.subscribe({ next })
-
-      const is_even = (value: number) => value % 2 === 0
-      const filtered = subject.filter(is_even)
-
-      const next_filtered = fn()
-      filtered.subscribe({ next: next_filtered })
-
-      for (let i = 1; i <= 5; i++) {
-        subject.next(i)
-      }
-
-      expect(next.mock.calls).toEqual([[1], [2], [3], [4], [5]])
-      expect(next_filtered.mock.calls).toEqual([[2], [4]])
+  describe("constructing a Subject from an initial Error", () => {
+    it("initialises with a Failure", () => {
+      const subject = Subject(new Error("blep")) as Subject
+      expect(subject.previous).toBeInstanceOf(Failure)
     })
 
-    it("narrows the type if the predicate is a type guard", () => {
-      const subject = Subject() as Subject<number | string>
-
-      const is_string = (value: unknown): value is string => typeof value === "string"
-      const filtered = subject.filter(is_string)
-
-      const next = fn()
-      filtered.subscribe({ next })
-
-      subject.next(1)
-      subject.next("hello")
-
-      expect(next).toHaveBeenCalledWith("hello")
-      expect(next).not.toHaveBeenCalledWith(1)
-
-      expectTypeOf(filtered).toMatchTypeOf<Subject<string>>()
+    it("defaults to an Outcome of unknown", () => {
+      const subject = Subject(new Error())
+      expectTypeOf(subject).toEqualTypeOf<Subject<Outcome<unknown>>>()
     })
 
-    it("can be used to narrow Maybe to Just (with Just.isa)", () => {
-      const subject = Subject() as Subject<Maybe<number>>
-      const filtered = subject.filter(Just.isa())
-
-      const next = fn()
-      filtered.subscribe({ next })
-
-      subject.next(Maybe())
-      subject.next(Maybe(1))
-
-      expect(next).toHaveBeenCalledWith(Maybe(1))
-      expect(next).not.toHaveBeenCalledWith(Maybe())
-
-      expectTypeOf(filtered).toMatchTypeOf<Subject<Just<number>>>() // failures
+    it("can be annotated to an Outcome of an explicit inner type", () => {
+      const subject: Subject<Outcome<string>> = Subject(new Error())
+      expectTypeOf(subject).toEqualTypeOf<Subject<Outcome<string>>>()
     })
 
-    it("can be used to narrow Maybe to Just (with a custom type guard)", () => {
-      const subject = Subject() as Subject<Maybe<number>>
+    it("can be annotated to a Result", () => {
+      const subject: Subject<Result<string>> = Subject(new Error())
+      expectTypeOf(subject).toEqualTypeOf<Subject<Result<string>>>()
+    })
 
-      const is_just = (value: unknown): value is Just<number> => value instanceof Just
-      const filtered = subject.filter(is_just)
+    it("can be annotated to a Failure", () => {
+      const subject: Subject<Failure> = Subject(new Error())
+      expectTypeOf(subject).toEqualTypeOf<Subject<Failure>>()
+      expectTypeOf(subject.error).toEqualTypeOf<Error>()
+    })
 
-      const next = fn()
-      filtered.subscribe({ next })
-
-      subject.next(Maybe())
-      subject.next(Maybe(1))
-
-      expect(next).toHaveBeenCalledWith(Maybe(1))
-      expect(next).not.toHaveBeenCalledWith(Maybe())
-
-      expectTypeOf(filtered).toMatchTypeOf<Subject<Just<number>>>() // works
+    it("cannot be annotated to form other types", () => {
+      // @ts-expect-error
+      const of_maybe: Subject<Maybe<string>> = Subject(new Error())
+      // @ts-expect-error
+      const of_just: Subject<Just<string>> = Subject(new Error())
+      // @ts-expect-error
+      const of_nothing: Subject<Nothing> = Subject(new Error())
+      // @ts-expect-error
+      const of_unknown: Subject<unknown> = Subject(new Error())
     })
   })
 
-  describe("merge", () => {
-    it("emits values from both subjects", () => {
-      const subject_of_number = Subject() as Subject<number>
-      const subject_of_string = Subject() as Subject<string>
-
-      const merged = subject_of_number.merge(subject_of_string)
-      expectTypeOf(merged).toMatchTypeOf<Subject<number | string>>()
-
-      const next = fn()
-      merged.subscribe({ next })
-
-      subject_of_number.next(1)
-      expect(next).toHaveBeenCalledWith(1)
-
-      subject_of_string.next("two")
-      expect(next).toHaveBeenCalledWith("two")
-    })
-  })
-})
-
-describe("async usage", () => {
-  it("supports async subscribers", async () => {
-    const subject = Subject()
-
-    let resolve_next
-    const next_promise = new Promise(resolve => {
-      resolve_next = resolve
+  describe("constructing a Subject from an initial Failure", () => {
+    it("initialises with a Failure", () => {
+      const subject = Subject(new Error("blep")) as Subject
+      expect(subject.previous).toBeInstanceOf(Failure)
     })
 
-    const next = fn().mockImplementation(() => setTimeout(() => resolve_next(), 50))
+    it("defaults to an Outcome of unknown", () => {
+      const subject = Subject(Failure())
+      expectTypeOf(subject).toEqualTypeOf<Subject<Outcome<unknown>>>()
+    })
 
-    subject.subscribe({ next })
+    it("can be annotated to an Outcome of an explicit inner type", () => {
+      const subject: Subject<Outcome<string>> = Subject(Failure())
+      expectTypeOf(subject).toEqualTypeOf<Subject<Outcome<string>>>()
+    })
 
-    subject.next("test")
+    it("can be annotated to a Result", () => {
+      const subject: Subject<Result<string>> = Subject(Failure())
+      expectTypeOf(subject).toEqualTypeOf<Subject<Result<string>>>()
+    })
 
-    // wait for next to be called
-    await next_promise
+    it("can be annotated to a Failure", () => {
+      const subject: Subject<Failure> = Subject(Failure())
+      expectTypeOf(subject).toEqualTypeOf<Subject<Failure>>()
+      expectTypeOf(subject.error).toEqualTypeOf<Error>()
+    })
 
-    expect(next).toHaveBeenCalledWith("test")
+    it("cannot be annotated to form other types", () => {
+      // @ts-expect-error
+      const of_maybe: Subject<Maybe<string>> = Subject(Failure())
+      // @ts-expect-error
+      const of_just: Subject<Just<string>> = Subject(Failure())
+      // @ts-expect-error
+      const of_nothing: Subject<Nothing> = Subject(Failure())
+      // @ts-expect-error
+      const of_unknown: Subject<unknown> = Subject(Failure())
+    })
   })
 
-  it("supports async next calls", async () => {
-    const subject = Subject()
+  describe("constructing a Subject from an initial Maybe", () => {
+    it("initialises with an apppropriate Maybe variant", () => {
+      const of_just = Subject(Maybe("boop")) as Subject
+      expect(of_just.previous).toBeInstanceOf(Just)
 
-    const next = fn()
-    subject.subscribe({ next, complete: () => {} })
+      const of_nothing = Subject(Maybe()) as Subject
+      expect(of_nothing.previous).toBeInstanceOf(Nothing)
+    })
 
-    await Promise.resolve().then(() => subject.next("boop"))
+    it("defaults to an Maybe of the same type", () => {
+      const maybe = Maybe("boop")
+      const subject = Subject(maybe)
+      expectTypeOf(subject).toEqualTypeOf<Subject<Maybe<string>>>()
+    })
 
-    expect(next).toHaveBeenCalledWith("boop")
+    it("cannot be annotated to form other types", () => {
+      // @ts-expect-error
+      const of_outcome: Subject<Outcome<string>> = Subject(Maybe("boop"))
+      // @ts-expect-error
+      const of_result: Subject<Result<string>> = Subject(Maybe("boop"))
+      // @ts-expect-error
+      const of_just: Subject<Just<string>> = Subject(Maybe("boop"))
+      // @ts-expect-error
+      const of_failure: Subject<Failure> = Subject(Maybe("boop"))
+      // @ts-expect-error
+      const of_nothing: Subject<Nothing> = Subject(Maybe("boop"))
+      // @ts-expect-error
+      const of_unknown: Subject<unknown> = Subject(Maybe("boop"))
+    })
   })
 
-  it("supports async complete calls", async () => {
-    const subject = Subject()
+  describe("constructing a Subject from an initial Result", () => {
+    it("initialises with an apppropriate Maybe variant", () => {
+      const of_just = Subject(Result("boop")) as Subject
+      expect(of_just.previous).toBeInstanceOf(Just)
 
-    const complete = fn()
-    subject.subscribe({ next: () => {}, complete })
+      const of_failure = Subject(Result(new Error())) as Subject
+      expect(of_failure.previous).toBeInstanceOf(Failure)
+    })
 
-    await Promise.resolve().then(() => subject.complete())
+    it("defaults to a Result of the same type", () => {
+      const result = Result("boop")
+      const subject = Subject(result)
+      expectTypeOf(subject).toEqualTypeOf<Subject<Result<string>>>()
+    })
 
-    expect(complete).toHaveBeenCalled()
-  })
-})
-
-describe("with other types", () => {
-  it("Maybe", () => {
-    const subject = Subject(Maybe(1))
-
-    const next = fn()
-    subject.subscribe({ next, complete: () => {} })
-
-    subject.next(Maybe(2))
-
-    expect(next).toHaveBeenCalledWith(Maybe(2))
-    expect(subject.value).toEqual(Maybe(2))
-  })
-
-  it("Result", () => {
-    const subject = Subject(Result(1))
-
-    const next = fn()
-    subject.subscribe({ next, complete: () => {} })
-
-    subject.next(Result(new Error("boo")))
-
-    expect(next).toHaveBeenCalledWith(Failure("boo"))
-    expect(subject.value).toEqual(Failure("boo"))
+    it("cannot be annotated to form other types", () => {
+      // @ts-expect-error
+      const of_outcome: Subject<Outcome<string>> = Subject(Result("boop"))
+      // @ts-expect-error
+      const of_maybe: Subject<Maybe<string>> = Subject(Result("boop"))
+      // @ts-expect-error
+      const of_just: Subject<Just<string>> = Subject(Result("boop"))
+      // @ts-expect-error
+      const of_failure: Subject<Failure> = Subject(Result("boop"))
+      // @ts-expect-error
+      const of_nothing: Subject<Nothing> = Subject(Result("boop"))
+      // @ts-expect-error
+      const of_unknown: Subject<unknown> = Subject(Result("boop"))
+    })
   })
 
-  it("Maybe (async)", async () => {
-    const subject = Subject(Maybe(1))
+  describe("constructing a Subject from an initial Just", () => {
+    it("initialises with a Just", () => {
+      const subject = Subject(Just("boop")) as Subject
+      expect(subject.previous).toBeInstanceOf(Just)
+    })
 
-    const next = fn().mockResolvedValue(undefined)
-    subject.subscribe({ next, complete: () => {} })
+    it("defaults to a Just of the same type", () => {
+      // annotated to prevent a string literal type
+      const just: Just<string> = Just("boop")
+      const subject = Subject(just)
+      expectTypeOf(subject).toEqualTypeOf<Subject<Just<string>>>()
+      expectTypeOf(subject.value).toEqualTypeOf<string>()
+    })
 
-    subject.next(Maybe(2))
+    it("cannot be annotated to form other types", () => {
+      // @ts-expect-error
+      const of_outcome: Subject<Outcome<string>> = Subject(Just("boop"))
+      // @ts-expect-error
+      const of_maybe: Subject<Maybe<string>> = Subject(Just("boop"))
+      // @ts-expect-error
+      const of_result: Subject<Result<string>> = Subject(Just("boop"))
+      // @ts-expect-error
+      const of_failure: Subject<Failure> = Subject(Just("boop"))
+      // @ts-expect-error
+      const of_nothing: Subject<Nothing> = Subject(Just("boop"))
+      // @ts-expect-error
+      const of_unknown: Subject<unknown> = Subject(Just("boop"))
+    })
+  })
 
-    // wait for promises to resolve
-    await new Promise(setImmediate)
+  describe("constructing a Subject from any other value type", () => {
+    it("creates a Subject of Just that type", () => {
+      const subject = Subject("boop")
+      expectTypeOf(subject).toEqualTypeOf<Subject<Just<string>>>()
+      expectTypeOf(subject.value).toEqualTypeOf<string>()
+    })
 
-    expect(next).toHaveBeenCalledWith(Maybe(2))
+    it("cannot be annotated to form other types", () => {
+      // @ts-expect-error
+      const of_outcome: Subject<Outcome<string>> = Subject("boop")
+      // @ts-expect-error
+      const of_maybe: Subject<Maybe<string>> = Subject("boop")
+      // @ts-expect-error
+      const of_result: Subject<Result<string>> = Subject("boop")
+      // @ts-expect-error
+      const of_failure: Subject<Failure> = Subject("boop")
+      // @ts-expect-error
+      const of_nothing: Subject<Nothing> = Subject("boop")
+      // @ts-expect-error
+      const of_unknown: Subject<unknown> = Subject("boop")
+    })
+  })
+
+  describe("constructing a Subject from an initial Outcome", () => {
+    it("initialises with an apppropriate Outcome variant", () => {
+      const of_just = Subject(Outcome("boop")) as Subject
+      expect(of_just.previous).toBeInstanceOf(Just)
+
+      const of_nothing = Subject(Outcome()) as Subject
+      expect(of_nothing.previous).toBeInstanceOf(Nothing)
+
+      const of_failure = Subject(Outcome(new Error())) as Subject
+      expect(of_failure.previous).toBeInstanceOf(Failure)
+    })
+  })
+
+  describe("the conditional type of the next function", () => {
+    it("requires an argument for a Subject of Maybe (etc.)", () => {
+      const subject: Subject<Maybe<string>> = Subject()
+
+      subject.next(Maybe("boop"))
+      subject.next(Just("boop"))
+      subject.next(Nothing())
+
+      // @ts-expect-error
+      subject.next()
+    })
+
+    it("requires no argument for a Subject of Nothing", () => {
+      const subject: Subject<Nothing> = Subject()
+
+      // @ts-expect-error
+      subject.next(Maybe("boop"))
+      // @ts-expect-error
+      subject.next(Just("boop"))
+
+      subject.next(Nothing())
+      subject.next()
+    })
   })
 })
