@@ -1,4 +1,4 @@
-type Innermost<T> = T extends Outcome<infer U> ? Innermost<U> : T
+type Inner<T> = T extends Outcome<infer U> ? Inner<U> : T
 
 type Constructors = {
   Outcome:
@@ -6,8 +6,8 @@ type Constructors = {
     & {
       isa: () => <T>(instance: Outcome<T>) => instance is Outcome<T>
       ap: <T, U>(fn: Outcome<(value: T) => U>) => (outcome: Outcome<T>) => Outcome<U>
-      chain: <T, F extends Outcome<any>>(fn: (value: Innermost<T>) => F) => (outcome: Outcome<T>) => F
-      flatten: () => <T>(outcome: Outcome<T>) => Outcome<Innermost<T>>
+      chain: <T, F extends Outcome<any>>(fn: (value: Inner<T>) => F) => (outcome: Outcome<T>) => F
+      flatten: () => <T>(outcome: Outcome<T>) => Outcome<Inner<T>>
       join: () => <T>(outcome: Outcome<Outcome<T>>) => Outcome<T>
       map: <T, U>(fn: (value: T) => U) => (outcome: Outcome<T>) => Outcome<U>
       traverse: <T, F extends Outcome<any>>(fn: (value: T) => F) => (outcome: Outcome<T>) => Outcome<F>
@@ -24,8 +24,8 @@ type Constructors = {
     & {
       isa: () => <T>(instance: Outcome<T>) => instance is Maybe<T>
       ap: <T, U>(fn: Maybe<(value: T) => U>) => (maybe: Maybe<T>) => Maybe<U>
-      chain: <T, F extends Maybe<any>>(fn: (value: Innermost<T>) => F) => (maybe: Maybe<T>) => F
-      flatten: () => <T>(maybe: Maybe<T>) => Maybe<Innermost<T>>
+      chain: <T, F extends Maybe<any>>(fn: (value: Inner<T>) => F) => (maybe: Maybe<T>) => F
+      flatten: () => <T>(maybe: Maybe<T>) => Maybe<Inner<T>>
       join: () => <T>(maybe: Maybe<Maybe<T>>) => Maybe<T>
       map: <T, U>(fn: (value: T) => U) => (maybe: Maybe<T>) => Maybe<U>
       traverse: <T, F extends Maybe<any>>(fn: (value: T) => F) => (maybe: Maybe<T>) => Maybe<F>
@@ -41,8 +41,8 @@ type Constructors = {
     & {
       isa: () => <T>(instance: Outcome<T>) => instance is Result<T>
       ap: <T, U>(fn: Result<(value: T) => U>) => (result: Result<T>) => Result<U>
-      chain: <T, F extends Result<any>>(fn: (value: Innermost<T>) => F) => (result: Result<T>) => F
-      flatten: () => <T>(result: Result<T>) => Result<Innermost<T>>
+      chain: <T, F extends Result<any>>(fn: (value: Inner<T>) => F) => (result: Result<T>) => F
+      flatten: () => <T>(result: Result<T>) => Result<Inner<T>>
       join: () => <T>(result: Result<Result<T>>) => Result<T>
       map: <T, U>(fn: (value: T) => U) => (result: Result<T>) => Result<U>
       traverse: <T, F extends Result<any>>(fn: (value: T) => F) => (result: Result<T>) => Result<F>
@@ -58,8 +58,8 @@ type Constructors = {
     & {
       isa: () => <T>(instance: Outcome<T>) => instance is Just<T>
       ap: <T, U>(fn: Just<(value: T) => U>) => (Just: Just<T>) => Just<U>
-      chain: <T, F extends Just<any>>(fn: (value: Innermost<T>) => F) => (Just: Just<T>) => F
-      flatten: () => <T>(Just: Just<T>) => Just<Innermost<T>>
+      chain: <T, F extends Just<any>>(fn: (value: Inner<T>) => F) => (Just: Just<T>) => F
+      flatten: () => <T>(Just: Just<T>) => Just<Inner<T>>
       join: () => <T>(Just: Just<Just<T>>) => Just<T>
       map: <T, U>(fn: (value: T) => U) => (Just: Just<T>) => Just<U>
       traverse: <T, F extends Just<any>>(fn: (value: T) => F) => (Just: Just<T>) => Just<F>
@@ -87,7 +87,7 @@ type Constructors = {
  * The most general type, a union of everything.
  * No (useful) runtime representation.
  */
-interface Outcome<T> {
+interface Outcome<T = unknown> {
   name: "Just" | "Nothing" | "Failure"
   isa<U>(constructor: (arg?: any) => U): this is U extends Just ? Just<T>
     : U extends Nothing ? Nothing
@@ -95,12 +95,12 @@ interface Outcome<T> {
     : U extends Maybe ? Maybe<T>
     : U extends Result ? Result<T>
     : Outcome<T>
+  join<U>(this: U): U extends Just<Just<infer V>> ? Just<V> : U
+  flatten<U>(this: U): U extends Just<infer V> ? Just<Inner<V>> : U
   unwrap(): T
   unwrap_or<U>(value: U): T | U
   unwrap_or_else<U>(fn: () => U): T | U
-  join<U>(this: U): U extends Just<Just<infer V>> ? Just<V> : U
-  flatten<U>(this: U): U extends Just<infer V> ? Just<Innermost<V>> : U
-  chain<U, F extends Outcome<NonNullable<U>>>(fn: (value: Innermost<T>) => F): F
+  chain<U, F extends Outcome<NonNullable<U>>>(fn: (value: Inner<T>) => F): F
   fold<U, E>(on_value: (value?: T) => U, otherwise?: (error: Error) => E): U | E
 
   map<U>(fn: (value: T) => NonNullable<U>): this extends Just<T> ? Just<NonNullable<U>>
@@ -117,7 +117,7 @@ interface Outcome<T> {
     : V extends Result<(value: T) => any> ? Result<WrappedReturn<V>>
     : Outcome<WrappedReturn<V>>
 
-  traverse<U, F extends Outcome<NonNullable<U>>>(fn: (value: Innermost<T>) => F): this extends Just<T> ? Just<F>
+  traverse<U, F extends Outcome<NonNullable<U>>>(fn: (value: Inner<T>) => F): this extends Just<T> ? Just<F>
     : this extends Nothing ? Nothing
     : this extends Failure ? Failure
     : this extends Maybe<T> ? Maybe<F>
