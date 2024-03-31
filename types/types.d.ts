@@ -21,8 +21,7 @@ type Constructors = {
     }
 
   Maybe:
-    & (<T>(value: T) => Maybe<NonNullable<T>>)
-    & (() => Maybe<unknown>)
+    & (<T>(value?: T) => Maybe<NonNullable<T>>)
     & {
       isa: () => <T>(instance: Outcome<T>) => instance is Maybe<T>
       ap: <T, U>(fn: Maybe<(value: T) => U>) => (maybe: Maybe<T>) => Maybe<U>
@@ -83,37 +82,8 @@ type Constructors = {
     }
 
   Subject: {
-    <O extends Outcome>(): Subject<
-      O extends Nothing<never> ? Nothing<never>
-        : O extends Maybe<infer U> ? Maybe<U>
-        : O extends Outcome<infer U> ? Outcome<U>
-        : O
-    >
-
-    (init: Nothing): Subject<Nothing>
-    (init: Error | Failure): Subject<Failure>
-
-    <O extends Just>(init: O): Subject<Just<Inner<O>>>
-
-    <O extends Maybe>(init: O): Subject<
-      O extends Maybe<never> ? Maybe<unknown>
-        : O extends Maybe<infer U> ? Maybe<U>
-        : O
-    >
-
-    <O extends Result>(init: O): Subject<
-      O extends Result<never> ? Result<unknown>
-        : O extends Result<infer U> ? Result<U>
-        : O
-    >
-
-    <O extends Outcome>(init: O): Subject<
-      O extends Outcome<never> ? Outcome<unknown>
-        : O extends Outcome<infer U> ? Outcome<U>
-        : O
-    >
-
-    <T extends unknown>(init: T): Subject<Just<T>>
+    <O extends Nothing>(): Subject<Nothing>
+    <O extends Outcome>(init: O): Subject<O>
   }
 }
 
@@ -256,8 +226,8 @@ type Subject<O extends Outcome = Outcome> = O & {
   subscribers: Array<Subscriber<O>>
   subscribe: (subscriber: Subscriber<O>) => void
 
-  next<Self extends Subject<Nothing>>(this: Self): void
-  next(next: Inner<O> | O): void
+  next<Self extends Subject<Nothing>>(this: Self, next?: Nothing): void
+  next<U extends O>(next: Inner<U> extends never ? O : U): void
 
   filter<U extends O>(predicate: (element: O) => element is U): Subject<U>
   filter(predicate: (value: O) => boolean): Subject<O>

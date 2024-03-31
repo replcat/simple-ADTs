@@ -188,6 +188,8 @@ const constructors = (() => {
   Failure.prototype.constructor = Failure
 
   function Subject(init = Nothing()) {
+    assert(init instanceof Outcome, `Subject expects an Outcome (got ${inspect_type(init)})`)
+
     let inner
 
     const instance = Object.create(Subject.prototype, {
