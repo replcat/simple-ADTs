@@ -43,8 +43,6 @@ describe("calling the constructor with no argument (exceptional case)", () => {
     subject.next()
 
     // @ts-expect-error
-    subject.next(1)
-    // @ts-expect-error
     subject.next(Maybe())
     // @ts-expect-error
     subject.next(Outcome())
@@ -87,11 +85,7 @@ describe("calling the constructor with a Failure", () => {
     // @ts-expect-error
     subject.next()
     // @ts-expect-error
-    subject.next(1)
-    // @ts-expect-error
     subject.next(Maybe())
-    // @ts-expect-error
-    subject.next(new Error())
     // @ts-expect-error
     subject.next(Outcome(new Error()))
   })
@@ -142,8 +136,6 @@ describe("calling the constructor a Just", () => {
     // @ts-expect-error
     subject.next()
     // @ts-expect-error
-    subject.next(1)
-    // @ts-expect-error
     subject.next(Nothing())
     // @ts-expect-error
     subject.next(Maybe("test"))
@@ -186,8 +178,6 @@ describe("calling the constructor with a Maybe", () => {
     // @ts-expect-error
     subject.next()
     // @ts-expect-error
-    subject.next(1)
-    // @ts-expect-error
     subject.next(Result("test"))
     // @ts-expect-error
     subject.next(Outcome("test"))
@@ -224,8 +214,6 @@ describe("calling the constructor with a Result", () => {
 
     // @ts-expect-error
     subject.next()
-    // @ts-expect-error
-    subject.next(1)
     // @ts-expect-error
     subject.next(Maybe("test"))
     // @ts-expect-error

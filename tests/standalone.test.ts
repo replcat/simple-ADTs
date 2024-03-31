@@ -1,5 +1,5 @@
 import { fc, test } from "@fast-check/vitest"
-import { assert, describe, expect, expectTypeOf } from "vitest"
+import { assert, describe, expect, expectTypeOf, it } from "vitest"
 
 import { constructors } from "../lib.js"
 const { Maybe, Result, Just, Nothing, Failure } = constructors

@@ -1,6 +1,9 @@
 type Inner<T> = T extends Outcome<infer U> ? Inner<U> : T
 type WrappedReturn<T> = T extends Outcome<(arg: any) => infer U> ? U : never
 
+type Join<T> = T extends Just<infer U> ? U extends Just<infer V> ? Just<V> : T : T
+type Flatten<T> = T extends Just<infer U> ? U extends Just<infer V> ? Flatten<Just<V>> : Just<U> : T
+
 type Constructors = {
   Outcome:
     & (<T>(value?: T | Error) => Outcome<T extends Error ? never : NonNullable<T>>)
@@ -101,8 +104,8 @@ interface Outcome<T = unknown> {
     : U extends Result ? Result<T>
     : Outcome<T>
 
-  join<U>(this: U): U extends Just<Just<infer V>> ? Just<V> : U
-  flatten<U>(this: U): U extends Just<infer V> ? Just<Inner<V>> : U
+  join<U>(this: U): Join<U>
+  flatten<U>(this: U): Flatten<U>
 
   unwrap(): T
   unwrap_or<U>(value: U): T | U
@@ -220,7 +223,7 @@ type Subject<O extends Outcome = Outcome> = O & {
 
   inner: O
 
-  completed: boolean
+  is_completed: boolean
   complete(): void
 
   subscribers: Array<Subscriber<O>>

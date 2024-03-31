@@ -29,7 +29,7 @@ describe("the next function", () => {
       expectTypeOf(subject).toEqualTypeOf<Subject<Just<number>>>()
 
       // @ts-expect-error
-      subject.next(2)
+      expect(() => subject.next(2)).toThrow()
       // @ts-expect-error
       subject.next(Nothing())
       // @ts-expect-error
@@ -141,6 +141,40 @@ describe("the next function", () => {
   })
 })
 
+describe("Subject.complete", () => {
+  it("completes (and locks) the Subject", () => {
+    const subject = Subject(Just(1 as number))
+    expect(subject.is_completed).toBe(false)
+
+    const complete = fn()
+    const next = fn()
+
+    subject.subscribe({ next, complete })
+    expect(subject.subscribers.length).toBe(1)
+
+    subject.next(Just(2))
+
+    expect(next).toHaveBeenCalledWith(Just(2))
+    expect(complete).not.toHaveBeenCalled()
+
+    subject.complete()
+    expect(complete).toHaveBeenCalled()
+
+    expect(next).toHaveBeenCalledTimes(1)
+    expect(complete).toHaveBeenCalledTimes(1)
+
+    expect(subject.is_completed).toBe(true)
+    expect(subject.subscribers.length).toBe(0)
+
+    subject.subscribe({ next, complete })
+    expect(subject.subscribers.length).toBe(0)
+
+    subject.next(Just(3))
+    expect(next).toHaveBeenCalledTimes(1)
+    expect(complete).toHaveBeenCalledTimes(1)
+  })
+})
+
 describe("Subject.derive", () => {
   it("returns a new computed Subject", () => {
     const subject = Subject(Maybe(1))
@@ -197,5 +231,16 @@ describe("Subject.merge", () => {
     expect(merge_four.inner).toBeInstanceOf(Nothing)
 
     expect(merge_two.unwrap()).toBe(999) // (unchanged)
+  })
+})
+
+describe("methods on the wrapped type", () => {
+  it("can be called on the Subject", () => {
+    const result = Subject(Just(1))
+      .map(value => value * 2)
+      .chain(value => Just(String(value)))
+
+    expectTypeOf(result).toEqualTypeOf<Just<string>>()
+    expect(result.unwrap()).toBe("2")
   })
 })
