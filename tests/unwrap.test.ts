@@ -101,3 +101,18 @@ describe("unwrap_or_else", () => {
     })
   })
 })
+
+describe("unwrapping errors", () => {
+  it("unwraps errors from Failure types", () => {
+    const failure = Failure("cool beans")
+    expect(failure.unwrap_error()).toBeInstanceOf(Error)
+
+    const result = Result()
+    expect(result.unwrap_error()).toBeInstanceOf(Error)
+  })
+
+  it("throws on types without error values", () => {
+    expect(() => Just("blep").unwrap_error()).toThrow(TypeError)
+    expect(() => Nothing().unwrap_error()).toThrow(TypeError)
+  })
+})

@@ -18,12 +18,22 @@ function inspect_type(variable) {
 const constructors = (() => {
   function Outcome(value) {
     if (value == null) return Nothing()
+    if (value instanceof Nothing) return value
+
     if (value instanceof Error) return Failure(value)
     if (value instanceof Failure) return value
+
     return Just(value)
   }
 
-  Outcome.prototype = Object.create(Object.prototype)
+  Outcome.prototype = Object.create(Object.prototype, {
+    name: {
+      get: function() {
+        return this.constructor.name
+      },
+    },
+  })
+
   Outcome.prototype.constructor = function() {
     throw new TypeError(`${Outcome.name} cannot be directly constructed`)
   }
@@ -152,7 +162,6 @@ const constructors = (() => {
   function Just(value) {
     assert(value != null && !(value instanceof Error), `Just expects a value (got ${inspect_type(value)})`)
     return Object.create(Just.prototype, {
-      name: { value: "Just" },
       value: { value, enumerable: true },
     })
   }
@@ -161,9 +170,7 @@ const constructors = (() => {
   Just.prototype.constructor = Just
 
   function Nothing() {
-    return Object.create(Nothing.prototype, {
-      name: { value: "Nothing" },
-    })
+    return Object.create(Nothing.prototype)
   }
 
   Nothing.prototype = Object.create(Outcome.prototype)
@@ -178,9 +185,8 @@ const constructors = (() => {
     }
 
     return Object.create(Failure.prototype, {
-      name: { value: "Failure" },
-      error: { value: error, enumerable: true },
-      message: { get: () => error.message, enumerable: true },
+      message: { value: error.message, enumerable: true },
+      error: { value: error },
     })
   }
 
