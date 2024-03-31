@@ -22,7 +22,7 @@ describe("unwrap", () => {
   describe("on Nothing", () => {
     it("throws a generic error", () => {
       expect(() => Nothing().unwrap()).toThrowError(
-        new TypeError(`Unwrapped an empty Nothing`),
+        new TypeError(`Tried to unwrap an empty Nothing`),
       )
     })
   })

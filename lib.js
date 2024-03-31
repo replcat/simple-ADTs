@@ -34,7 +34,10 @@ const constructors = (() => {
     if (constructor.name === "Outcome") return this["name"] === "Just" || this["name"] === "Nothing" || this["name"] === "Failure"
     if (constructor.name === "Maybe") return this["name"] === "Just" || this["name"] === "Nothing"
     if (constructor.name === "Result") return this["name"] === "Just" || this["name"] === "Failure"
-    return this instanceof constructor
+    if (constructor.name === "Just") return this["name"] === "Just"
+    if (constructor.name === "Nothing") return this["name"] === "Nothing"
+    if (constructor.name === "Failure") return this["name"] === "Failure"
+    throw new TypeError(`isa: No match for type of ${inspect_type(constructor)}`)
   }
 
   /** @this {globalThis.Outcome} */
@@ -101,19 +104,36 @@ const constructors = (() => {
   Outcome.prototype.unwrap = function() {
     if ("value" in this && this instanceof Just) return this.value
     if ("error" in this && this instanceof Failure) throw this.error
-    throw new TypeError(`Unwrapped an empty ${this["name"]}`)
+    throw new TypeError(`Tried to unwrap an empty ${this["name"]}`)
   }
 
-  Outcome.prototype.unwrap_or = function(value) {
-    assert(value != null, `unwrap_or expects a value (got ${inspect_type(value)})`)
+  Outcome.prototype.unwrap_or = function(fallback) {
+    assert(fallback != null, `unwrap_or expects a value (got ${inspect_type(fallback)})`)
     if ("value" in this && this instanceof Just) return this.value
-    return value
+    return fallback
   }
 
-  Outcome.prototype.unwrap_or_else = function(fn) {
-    assert(typeof fn === "function", `unwrap_or_else expects a function (got ${inspect_type(fn)})`)
+  Outcome.prototype.unwrap_or_else = function(fallback_fn) {
+    assert(typeof fallback_fn === "function", `unwrap_or_else expects a function (got ${inspect_type(fallback_fn)})`)
     if ("value" in this && this instanceof Just) return this.value
-    return fn()
+    return fallback_fn()
+  }
+
+  Outcome.prototype.unwrap_error = function() {
+    if ("error" in this && this instanceof Failure) return this.error
+    throw new TypeError(`Tried to unwrap_error an a ${this["name"]}`)
+  }
+
+  Outcome.prototype.unwrap_error_or = function(fallback) {
+    assert(fallback != null, `unwrap_error_or expects a value (got ${inspect_type(fallback)})`)
+    if ("error" in this && this instanceof Failure) return this.error
+    return fallback
+  }
+
+  Outcome.prototype.unwrap_error_or_else = function(fallback_fn) {
+    assert(typeof fallback_fn === "function", `unwrap_error_or_else expects a function (got ${inspect_type(fallback_fn)})`)
+    if ("error" in this && this instanceof Failure) return this.error
+    return fallback_fn()
   }
 
   function Maybe(value) {
@@ -167,23 +187,6 @@ const constructors = (() => {
   Failure.prototype = Object.create(Outcome.prototype)
   Failure.prototype.constructor = Failure
 
-  const delegate_to_instance = method => (...params) => instance =>
-    method in instance
-      ? instance[method](...params)
-      : instance
-
-  for (const type of [Outcome, Just, Nothing, Failure, Maybe, Result]) {
-    type["isa"] = () => instance => instance.isa(type)
-    type["join"] = delegate_to_instance("join")
-    type["flatten"] = delegate_to_instance("flatten")
-    type["ap"] = delegate_to_instance("ap")
-    type["chain"] = delegate_to_instance("chain")
-    type["map"] = delegate_to_instance("map")
-    type["traverse"] = delegate_to_instance("traverse")
-    type["fold"] = delegate_to_instance("fold")
-    type["match"] = delegate_to_instance("match")
-  }
-
   function Subject(init = Nothing()) {
     let inner
 
@@ -192,11 +195,11 @@ const constructors = (() => {
         get: () => instance.completed ? "∅" : String(instance.subscribers.length),
       },
 
+      inner: { value: init, configurable: true },
       value: { enumerable: false, configurable: true },
       error: { enumerable: false, configurable: true },
-      completed: { value: false, configurable: true },
-      previous: { value: init, configurable: true },
 
+      completed: { value: false, configurable: true },
       complete: {
         configurable: true,
         value: () => {
@@ -226,7 +229,7 @@ const constructors = (() => {
         value: next => {
           inner = next instanceof Outcome ? next : Outcome(next)
           Object.defineProperties(instance, {
-            previous: { value: inner, configurable: true },
+            inner: { value: inner, configurable: true },
             value: { value: "value" in inner ? inner.value : undefined, enumerable: "value" in inner, configurable: true },
             error: { value: "error" in inner ? inner.error : undefined, enumerable: "error" in inner, configurable: true },
           })
@@ -237,18 +240,58 @@ const constructors = (() => {
       },
     })
 
+    for (const method of [...delegable_methods, ...unwrap_methods]) {
+      Object.defineProperty(instance, method, {
+        value: function(...args) {
+          return inner[method](...args)
+        },
+      })
+    }
+
+    Object.defineProperty(instance, "derive", {
+      value: fn => {
+        assert(typeof fn === "function", `compute expects a function (got ${inspect_type(fn)})`)
+        const derived_instance = Subject(fn(inner))
+        instance.subscribe({
+          next: next => derived_instance.next(fn(next)),
+          complete: () => derived_instance.complete(),
+        })
+        return derived_instance
+      },
+    })
+
+    Object.defineProperty(instance, "merge", {
+      value: (...subjects) => {
+        const merged = Subject(inner)
+        for (const subject of [instance, ...subjects]) {
+          subject.subscribe({ next: next => merged.next(next) })
+        }
+        return merged
+      },
+    })
+
     instance.next(init)
 
     return instance
   }
 
-  const delegate_to_last = method => (...params) => subject =>
-    method in subject.last
-      ? subject.last[method](...params)
-      : subject.last
-
   Subject.prototype = Object.create(Object.prototype)
   Subject.prototype.constructor = Subject
+
+  const unwrap_methods = ["unwrap", "unwrap_or", "unwrap_or_else", "unwrap_error", "unwrap_error_or", "unwrap_error_or_else"]
+  const delegable_methods = ["join", "flatten", "ap", "chain", "map", "traverse", "fold", "match"]
+
+  const delegate_to_instance = method => (...params) => instance =>
+    method in instance
+      ? instance[method](...params)
+      : instance
+
+  for (const type of [Outcome, Just, Nothing, Failure, Maybe, Result]) {
+    type["isa"] = () => instance => instance.isa(type)
+    for (const method of delegable_methods) {
+      type[method] = delegate_to_instance(method)
+    }
+  }
 
   return {
     Outcome,

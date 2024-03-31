@@ -1,4 +1,5 @@
 type Inner<T> = T extends Outcome<infer U> ? Inner<U> : T
+type WrappedReturn<T> = T extends Outcome<(arg: any) => infer U> ? U : never
 
 type Constructors = {
   Outcome:
@@ -20,7 +21,8 @@ type Constructors = {
     }
 
   Maybe:
-    & (<T>(value?: T) => Maybe<NonNullable<T>>)
+    & (<T>(value: T) => Maybe<NonNullable<T>>)
+    & (() => Maybe<unknown>)
     & {
       isa: () => <T>(instance: Outcome<T>) => instance is Maybe<T>
       ap: <T, U>(fn: Maybe<(value: T) => U>) => (maybe: Maybe<T>) => Maybe<U>
@@ -37,7 +39,7 @@ type Constructors = {
     }
 
   Result:
-    & (<T>(value?: T | Error) => Result<T extends Error ? never : NonNullable<T>>)
+    & (<T>(value?: T | Error) => Result<T extends Error ? unknown : NonNullable<T>>)
     & {
       isa: () => <T>(instance: Outcome<T>) => instance is Result<T>
       ap: <T, U>(fn: Result<(value: T) => U>) => (result: Result<T>) => Result<U>
@@ -81,30 +83,32 @@ type Constructors = {
     }
 
   Subject: {
-    <O extends Outcome>(init?: Nothing): Subject<
+    <O extends Outcome>(): Subject<
       O extends Nothing<never> ? Nothing<never>
         : O extends Maybe<infer U> ? Maybe<U>
         : O extends Outcome<infer U> ? Outcome<U>
         : O
     >
 
-    <O extends Outcome>(init: Error | Failure): Subject<
-      O extends Failure<never> ? Failure<never>
-        : O extends Result<infer U> ? Result<U>
-        : O extends Outcome<infer U> ? Outcome<U>
-        : O
-    >
+    (init: Nothing): Subject<Nothing>
+    (init: Error | Failure): Subject<Failure>
 
     <O extends Just>(init: O): Subject<Just<Inner<O>>>
 
     <O extends Maybe>(init: O): Subject<
-      O extends Maybe<infer U> ? Maybe<U>
-        : O extends Outcome<infer U> ? Outcome<U>
+      O extends Maybe<never> ? Maybe<unknown>
+        : O extends Maybe<infer U> ? Maybe<U>
         : O
     >
 
     <O extends Result>(init: O): Subject<
-      O extends Result<infer U> ? Result<U>
+      O extends Result<never> ? Result<unknown>
+        : O extends Result<infer U> ? Result<U>
+        : O
+    >
+
+    <O extends Outcome>(init: O): Subject<
+      O extends Outcome<never> ? Outcome<unknown>
         : O extends Outcome<infer U> ? Outcome<U>
         : O
     >
@@ -119,17 +123,25 @@ type Constructors = {
  */
 interface Outcome<T = unknown> {
   name: "Just" | "Nothing" | "Failure"
+
   isa<U>(constructor: (arg?: any) => U): this is U extends Just ? Just<T>
     : U extends Nothing ? Nothing
     : U extends Failure ? Failure
     : U extends Maybe ? Maybe<T>
     : U extends Result ? Result<T>
     : Outcome<T>
+
   join<U>(this: U): U extends Just<Just<infer V>> ? Just<V> : U
   flatten<U>(this: U): U extends Just<infer V> ? Just<Inner<V>> : U
+
   unwrap(): T
   unwrap_or<U>(value: U): T | U
   unwrap_or_else<U>(fn: () => U): T | U
+
+  unwrap_error(): Error
+  unwrap_error_or<U>(value: U): Error | U
+  unwrap_error_or_else<U>(fn: () => U): Error | U
+
   chain<U, F extends Outcome<NonNullable<U>>>(fn: (value: Inner<T>) => F): F
   fold<U, E>(on_value: (value?: T) => U, otherwise?: (error: Error) => E): U | E
 
@@ -163,8 +175,6 @@ interface Outcome<T = unknown> {
       : Sout | NOut | FOut
   >
 }
-
-type WrappedReturn<T> = T extends Outcome<(arg: any) => infer U> ? U : never
 
 // require keys for each member of the union on which we're matching
 type Matcher<Self extends Outcome<T>, T, Sout, NOut, FOut> = {
@@ -232,7 +242,13 @@ type Subscriber<O> =
   | { next?: (next: O) => void; complete: () => void }
 
 type Subject<O extends Outcome = Outcome> = O & {
-  previous: O
+  /**
+   * This would be a footgun, since Subjects could emit new values of their
+   * previous type. It's still available on the `inner` property, though.
+   */
+  isa: never
+
+  inner: O
 
   completed: boolean
   complete(): void
@@ -240,8 +256,17 @@ type Subject<O extends Outcome = Outcome> = O & {
   subscribers: Array<Subscriber<O>>
   subscribe: (subscriber: Subscriber<O>) => void
 
-  next<Self extends Outcome>(this: Self, next: O): void
-  next<Self extends Nothing>(this: Self): void
+  next<Self extends Subject<Nothing>>(this: Self): void
+  next(next: Inner<O> | O): void
+
+  filter<U extends O>(predicate: (element: O) => element is U): Subject<U>
+  filter(predicate: (value: O) => boolean): Subject<O>
+
+  merge<U extends Outcome>(other: Subject<U>): Subject<Consolidate<O | U>>
+  merge<U1 extends Outcome, U2 extends Outcome>(other1: Subject<U1>, other2: Subject<U2>): Subject<Consolidate<O | U1 | U2>>
+  merge<U1 extends Outcome, U2 extends Outcome, U3 extends Outcome>(other1: Subject<U1>, other2: Subject<U2>, other3: Subject<U3>): Subject<Consolidate<O | U1 | U2 | U3>>
+
+  derive<U extends Outcome>(fn: (next: O) => U): Subject<U>
 }
 
 type Pipe = {
