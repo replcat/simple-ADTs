@@ -139,14 +139,7 @@ interface Outcome<T = unknown> {
     : this extends Result<T> ? Result<F>
     : Outcome<F>
 
-  match<Sout = never, NOut = never, FOut = never>(matcher: Matcher<this, T, Sout, NOut, FOut>): Consolidate<
-    this extends Maybe<T> ? Sout | NOut
-      : this extends Result<T> ? Sout | FOut
-      : this extends Just<T> ? Sout
-      : this extends Nothing ? NOut
-      : this extends Failure ? FOut
-      : Sout | NOut | FOut
-  >
+  match<Sout = never, NOut = never, FOut = never>(matcher: Matcher<this, T, Sout, NOut, FOut>): Consolidate<Sout | NOut | FOut>
 }
 
 // require keys for each member of the union on which we're matching
@@ -161,11 +154,11 @@ type Matcher<Self extends Outcome<T>, T, Sout, NOut, FOut> = {
 // so that the conditional doesn't get distributed over the union, which would
 // result in e.g. `Maybe<number> | Maybe<nothing>` instead of `Maybe<number>`
 type Consolidate<Union> = [Union] extends [Just<infer T>] ? Just<T>
-  : [Union] extends [Nothing] ? Nothing
-  : [Union] extends [Failure] ? Failure
-  : [Union] extends [Just<infer T> | Nothing] ? Maybe<T>
-  : [Union] extends [Just<infer T> | Failure] ? Result<T>
-  : [Union] extends [Just<infer T> | Nothing | Failure] ? Outcome<T>
+  : [Union] extends [Nothing<infer T>] ? Nothing<T>
+  : [Union] extends [Failure<infer T>] ? Failure<T>
+  : [Union] extends [Just<infer T> | Nothing<infer T>] ? Maybe<T>
+  : [Union] extends [Just<infer T> | Failure<infer T>] ? Result<T>
+  : [Union] extends [Just<infer T> | Nothing<infer T> | Failure<infer T>] ? Outcome<T>
   : Union // not never, to allow other types through
 
 /**

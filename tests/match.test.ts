@@ -44,6 +44,26 @@ describe("type transformations", () => {
     expect(result).toEqual(Just(4))
   })
 
+  test("Result<string> to Maybe<number>", () => {
+    const result = Result("test")
+    const maybe = result.match({
+      Just: value => Just(value.length),
+      Failure: Nothing,
+    })
+    expectTypeOf(maybe).toMatchTypeOf<Maybe<number>>()
+    expect(maybe).toEqual(Just(4))
+  })
+
+  test("Maybe<string> to Outcome<number>", () => {
+    const maybe = Maybe("test")
+    const result = maybe.match({
+      Just: value => Result(value.length),
+      Nothing,
+    })
+    expectTypeOf(result).toMatchTypeOf<Outcome<number>>()
+    expect(result).toEqual(Just(4))
+  })
+
   test("reducing Maybes to a number", () => {
     let maybes = [Just("one"), Nothing(), Just("two")] as Maybe<string>[]
     let result = maybes.reduce(
