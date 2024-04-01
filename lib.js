@@ -65,8 +65,7 @@ const constructors = (() => {
   }
 
   Outcome.prototype.join = function() {
-    if (!(this instanceof Just)) return this
-    return (this["value"] instanceof Just)
+    return (this instanceof Just && this["value"] instanceof Outcome)
       ? this["value"]
       : this
   }

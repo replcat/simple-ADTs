@@ -28,7 +28,7 @@ describe("type transformations", () => {
     const maybe = Maybe("test")
     const just = maybe.match({
       Just: value => Just(value.length),
-      Nothing: () => Just(0),
+      Nothing: () => Just(0 as number),
     })
     expectTypeOf(just).toMatchTypeOf<Just<number>>()
     expect(just).toEqual(Just(4))
@@ -88,7 +88,8 @@ describe.each([Outcome, Maybe, Result, Just, Nothing, Failure])("%s", constructo
     fc.func(nonnullable_values),
     fc.func(nonnullable_values),
   ])("handles the match", (value: any, handle_just, handle_nothing, handle_failure) => {
-    let instance = constructor(constructor === Nothing ? undefined : value)
+    // @ts-ignore
+    let instance = constructor === Nothing ? constructor() : constructor(value)
 
     // @ts-ignore
     let result = instance.match({

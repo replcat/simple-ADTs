@@ -2,11 +2,12 @@ import { fc, test } from "@fast-check/vitest"
 import { assert, describe, expect, expectTypeOf, it } from "vitest"
 
 import { constructors } from "../lib.js"
-const { Maybe, Result, Just, Nothing, Failure } = constructors
+const { Outcome, Maybe, Result, Just, Nothing, Failure } = constructors
 
-const S = Just
+const J = Just
 const M = Maybe
 const R = Result
+const O = Outcome
 
 describe("join and flatten", () => {
   describe("Just", () => {
@@ -17,15 +18,15 @@ describe("join and flatten", () => {
     ] as Just<Just<Just<number>>>[]
 
     test("join", () => {
-      const result = just_just_justs.map(S.join())
-      expectTypeOf(result).toMatchTypeOf<Just<Just<number>>[]>()
-      expect(result).toEqual([Just(1), Just(2), Just(Just(3))])
+      const joined = just_just_justs.map(J.join())
+      expectTypeOf(joined).toMatchTypeOf<Just<Just<number>>[]>()
+      expect(joined).toEqual([Just(1), Just(2), Just(Just(3))])
     })
 
     test("flatten", () => {
-      const result = just_just_justs.map(S.flatten())
-      expectTypeOf(result).toMatchTypeOf<Just<number>[]>()
-      expect(result).toEqual([Just(1), Just(2), Just(3)])
+      const flattened = just_just_justs.map(J.flatten())
+      expectTypeOf(flattened).toMatchTypeOf<Just<number>[]>()
+      expect(flattened).toEqual([Just(1), Just(2), Just(3)])
     })
   })
 
@@ -38,15 +39,15 @@ describe("join and flatten", () => {
     ] as Maybe<Maybe<Maybe<number>>>[] // not strictly true...
 
     test("join", () => {
-      const result = maybe_maybe_maybes.map(M.join())
-      expectTypeOf(result).toMatchTypeOf<Maybe<Maybe<number>>[]>()
-      expect(result).toEqual([Nothing(), Just(1), Just(2), Just(Just(3))])
+      const joined = maybe_maybe_maybes.map(M.join())
+      expectTypeOf(joined).toMatchTypeOf<Maybe<Maybe<number>>[]>()
+      expect(joined).toEqual([Nothing(), Just(1), Just(2), Just(Just(3))])
     })
 
     test("flatten", () => {
-      const result = maybe_maybe_maybes.map(M.flatten())
-      expectTypeOf(result).toMatchTypeOf<Maybe<number>[]>()
-      expect(result).toEqual([Nothing(), Just(1), Just(2), Just(3)])
+      const flattened = maybe_maybe_maybes.map(M.flatten())
+      expectTypeOf(flattened).toMatchTypeOf<Maybe<number>[]>()
+      expect(flattened).toEqual([Nothing(), Just(1), Just(2), Just(3)])
     })
   })
 
@@ -59,15 +60,36 @@ describe("join and flatten", () => {
     ] as Result<Result<Result<number>>>[] // not strictly true...
 
     test("join", () => {
-      const result = result_result_results.map(R.join())
-      expectTypeOf(result).toMatchTypeOf<Result<Result<number>>[]>()
-      expect(result).toEqual([Failure(), Just(1), Just(2), Just(Just(3))])
+      const joined = result_result_results.map(R.join())
+      expectTypeOf(joined).toMatchTypeOf<Result<Result<number>>[]>()
+      expect(joined).toEqual([Failure(), Just(1), Just(2), Just(Just(3))])
     })
 
     test("flatten", () => {
-      const result = result_result_results.map(R.flatten())
-      expectTypeOf(result).toMatchTypeOf<Result<number>[]>()
-      expect(result).toEqual([Failure(), Just(1), Just(2), Just(3)])
+      const flattened = result_result_results.map(R.flatten())
+      expectTypeOf(flattened).toMatchTypeOf<Result<number>[]>()
+      expect(flattened).toEqual([Failure(), Just(1), Just(2), Just(3)])
+    })
+  })
+
+  describe("Outcome", () => {
+    const outcome_outcome_outcomes = [
+      Outcome(),
+      Outcome(1),
+      Outcome(Outcome(2)),
+      Outcome(Outcome(Outcome(3))),
+    ] as Outcome<Outcome<Outcome<number>>>[]
+
+    test("join", () => {
+      const joined = outcome_outcome_outcomes.map(O.join())
+      expectTypeOf(joined).toMatchTypeOf<Outcome<Outcome<number>>[]>()
+      expect(joined).toEqual([Nothing(), Just(1), Just(2), Just(Just(3))])
+    })
+
+    test("flatten", () => {
+      const flattened = outcome_outcome_outcomes.map(O.flatten())
+      expectTypeOf(flattened).toMatchTypeOf<Outcome<number>[]>()
+      expect(flattened).toEqual([Nothing(), Just(1), Just(2), Just(3)])
     })
   })
 })
@@ -76,7 +98,7 @@ describe("map", () => {
   test("Just", () => {
     const justs = [Just(1), Just(2)] as Just<number>[]
 
-    const stringify = S.map((n: number) => String(n))
+    const stringify = J.map((n: number) => String(n))
     const result = justs.map(stringify)
 
     expectTypeOf(result).toMatchTypeOf<Just<string>[]>()
@@ -108,7 +130,7 @@ describe("chain", () => {
   test("Just", () => {
     const justs = [Just(1), Just(2)] as Just<number>[]
 
-    const stringify = S.chain((n: number) => S(String(n)))
+    const stringify = J.chain((n: number) => J(String(n)))
     const result = justs.map(stringify)
 
     expectTypeOf(result).toMatchTypeOf<Just<string>[]>()
@@ -140,7 +162,7 @@ describe("ap", () => {
   test("Just", () => {
     const justs = [Just(1), Just(2)] as Just<number>[]
 
-    const stringify = S.ap(S((n: number) => String(n)))
+    const stringify = J.ap(J((n: number) => String(n)))
     const result = justs.map(stringify)
 
     expectTypeOf(result).toMatchTypeOf<Just<string>[]>()
@@ -173,8 +195,8 @@ describe("traverse", () => {
     const justs = [Just(1), Just(2)] as Just<number>[]
 
     const result = justs
-      .map(S.traverse((n: number) => Just(String(n))))
-      .map(S.flatten())
+      .map(J.traverse((n: number) => Just(String(n))))
+      .map(J.flatten())
 
     expectTypeOf(result).toMatchTypeOf<Just<string>[]>()
     expect(result).toEqual([Just("1"), Just("2")])
@@ -207,7 +229,7 @@ describe("fold", () => {
   test("Just", () => {
     const justs = [Just(1), Just(2)] as Just<number>[]
 
-    const fold = S.fold(
+    const fold = J.fold(
       value => String(value),
     )
 

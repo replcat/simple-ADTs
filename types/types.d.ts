@@ -1,18 +1,13 @@
-type Inner<T> = T extends Outcome<infer U> ? Inner<U> : T
-type WrappedReturn<T> = T extends Outcome<(arg: any) => infer U> ? U : never
-
-type Join<T> = T extends Just<infer U> ? U extends Just<infer V> ? Just<V> : T : T
-type Flatten<T> = T extends Just<infer U> ? U extends Just<infer V> ? Flatten<Just<V>> : Just<U> : T
-
 type Constructors = {
   Outcome:
+    & (<O extends Outcome>(value: O) => Outcome<O>)
     & (<T>(value?: T | Error) => Outcome<T extends Error ? never : NonNullable<T>>)
     & {
       isa: () => <T>(instance: Outcome<T>) => instance is Outcome<T>
       ap: <T, U>(fn: Outcome<(value: T) => U>) => (outcome: Outcome<T>) => Outcome<U>
-      chain: <T, F extends Outcome<any>>(fn: (value: Inner<T>) => F) => (outcome: Outcome<T>) => F
-      flatten: () => <T>(outcome: Outcome<T>) => Outcome<Inner<T>>
-      join: () => <T>(outcome: Outcome<Outcome<T>>) => Outcome<T>
+      chain: <T, F extends Outcome<any>>(fn: (value: InnermostWrappedTypeOf<T>) => F) => (outcome: Outcome<T>) => F
+      flatten: () => <O extends Outcome>(outcome: O) => Flatten<O>
+      join: () => <O extends Outcome>(outcome: O) => Join<O>
       map: <T, U>(fn: (value: T) => U) => (outcome: Outcome<T>) => Outcome<U>
       traverse: <T, F extends Outcome<any>>(fn: (value: T) => F) => (outcome: Outcome<T>) => Outcome<F>
       fold: <T, U, E>(on_value: (value?: T) => U, on_error?: (error: Error) => E) => (outcome: Outcome<T>) => U | E
@@ -24,13 +19,14 @@ type Constructors = {
     }
 
   Maybe:
+    & (<O extends Outcome>(value: O) => Maybe<O>)
     & (<T>(value?: T) => Maybe<NonNullable<T>>)
     & {
       isa: () => <T>(instance: Outcome<T>) => instance is Maybe<T>
       ap: <T, U>(fn: Maybe<(value: T) => U>) => (maybe: Maybe<T>) => Maybe<U>
-      chain: <T, F extends Maybe<any>>(fn: (value: Inner<T>) => F) => (maybe: Maybe<T>) => F
-      flatten: () => <T>(maybe: Maybe<T>) => Maybe<Inner<T>>
-      join: () => <T>(maybe: Maybe<Maybe<T>>) => Maybe<T>
+      chain: <T, F extends Maybe<any>>(fn: (value: InnermostWrappedTypeOf<T>) => F) => (maybe: Maybe<T>) => F
+      flatten: () => <O extends Maybe>(maybe: O) => Flatten<O>
+      join: () => <O extends Maybe>(maybe: O) => Join<O>
       map: <T, U>(fn: (value: T) => U) => (maybe: Maybe<T>) => Maybe<U>
       traverse: <T, F extends Maybe<any>>(fn: (value: T) => F) => (maybe: Maybe<T>) => Maybe<F>
       fold: <T, U, E>(on_value: (value?: T) => U, on_nothing?: () => E) => (maybe: Maybe<T>) => U | E
@@ -41,13 +37,14 @@ type Constructors = {
     }
 
   Result:
+    & (<O extends Outcome>(value: O) => Result<O>)
     & (<T>(value?: T | Error) => Result<T extends Error ? unknown : NonNullable<T>>)
     & {
       isa: () => <T>(instance: Outcome<T>) => instance is Result<T>
       ap: <T, U>(fn: Result<(value: T) => U>) => (result: Result<T>) => Result<U>
-      chain: <T, F extends Result<any>>(fn: (value: Inner<T>) => F) => (result: Result<T>) => F
-      flatten: () => <T>(result: Result<T>) => Result<Inner<T>>
-      join: () => <T>(result: Result<Result<T>>) => Result<T>
+      chain: <T, F extends Result<any>>(fn: (value: InnermostWrappedTypeOf<T>) => F) => (result: Result<T>) => F
+      flatten: () => <O extends Result>(result: O) => Flatten<O>
+      join: () => <O extends Result>(result: O) => Join<O>
       map: <T, U>(fn: (value: T) => U) => (result: Result<T>) => Result<U>
       traverse: <T, F extends Result<any>>(fn: (value: T) => F) => (result: Result<T>) => Result<F>
       fold: <T, U, E>(on_value: (value: T) => U, on_error?: (error: Error) => E) => (result: Result<T>) => U | E
@@ -58,13 +55,14 @@ type Constructors = {
     }
 
   Just:
-    & (<T>(value: NonNullable<T>) => Just<NonNullable<T>>)
+    & (<O extends Outcome>(value: O) => Just<O>)
+    & (<T>(value: NonNullable<T>) => Just<T>)
     & {
       isa: () => <T>(instance: Outcome<T>) => instance is Just<T>
       ap: <T, U>(fn: Just<(value: T) => U>) => (Just: Just<T>) => Just<U>
-      chain: <T, F extends Just<any>>(fn: (value: Inner<T>) => F) => (Just: Just<T>) => F
-      flatten: () => <T>(Just: Just<T>) => Just<Inner<T>>
-      join: () => <T>(Just: Just<Just<T>>) => Just<T>
+      chain: <T, F extends Just<any>>(fn: (value: InnermostWrappedTypeOf<T>) => F) => (Just: Just<T>) => F
+      flatten: () => <O extends Just>(just: O) => Flatten<O>
+      join: () => <O extends Just>(just: O) => Join<O>
       map: <T, U>(fn: (value: T) => U) => (Just: Just<T>) => Just<U>
       traverse: <T, F extends Just<any>>(fn: (value: T) => F) => (Just: Just<T>) => Just<F>
       fold: <T, U>(fn: (value: T) => U) => (Just: Just<T>) => U
@@ -115,15 +113,16 @@ interface Outcome<T = unknown> {
   unwrap_error_or<U>(value: U): Error | U
   unwrap_error_or_else<U>(fn: () => U): Error | U
 
-  chain<U, F extends Outcome<NonNullable<U>>>(fn: (value: Inner<T>) => F): F
+  chain<U, F extends Outcome<U>>(fn: (value: InnermostWrappedTypeOf<T>) => F): F
   fold<U, E>(on_value: (value?: T) => U, otherwise?: (error: Error) => E): U | E
 
-  map<U>(fn: (value: T) => NonNullable<U>): this extends Just<T> ? Just<NonNullable<U>>
+  map<U>(fn: (value: T) => U): this extends Just<T> ? Just<U>
     : this extends Nothing ? Nothing
     : this extends Failure ? Failure
-    : this extends Maybe<T> ? Maybe<NonNullable<U>>
-    : this extends Result<T> ? Result<NonNullable<U>>
-    : Outcome<NonNullable<U>>
+    : this extends Maybe<T> ? Maybe<U>
+    : this extends Result<T> ? Result<U>
+    : this extends Outcome<T> ? Outcome<U>
+    : never
 
   ap<V extends Outcome<(value: T) => any>>(this: Outcome<T>, fn: V): V extends Just<(value: T) => any> ? Just<WrappedReturn<V>>
     : V extends Nothing ? Nothing
@@ -132,7 +131,7 @@ interface Outcome<T = unknown> {
     : V extends Result<(value: T) => any> ? Result<WrappedReturn<V>>
     : Outcome<WrappedReturn<V>>
 
-  traverse<U, F extends Outcome<NonNullable<U>>>(fn: (value: Inner<T>) => F): this extends Just<T> ? Just<F>
+  traverse<U, F extends Outcome<U>>(fn: (value: InnermostWrappedTypeOf<T>) => F): this extends Just<T> ? Just<F>
     : this extends Nothing ? Nothing
     : this extends Failure ? Failure
     : this extends Maybe<T> ? Maybe<F>
@@ -141,25 +140,6 @@ interface Outcome<T = unknown> {
 
   match<Sout = never, NOut = never, FOut = never>(matcher: Matcher<this, T, Sout, NOut, FOut>): Consolidate<Sout | NOut | FOut>
 }
-
-// require keys for each member of the union on which we're matching
-type Matcher<Self extends Outcome<T>, T, Sout, NOut, FOut> = {
-  [K in Self["name"]]: K extends "Just" ? (value: T) => Sout
-    : K extends "Nothing" ? () => NOut
-    : K extends "Failure" ? (error: Error) => FOut
-    : never
-}
-
-// hacks! using the tuple to create a fake type for typescript to reason about,
-// so that the conditional doesn't get distributed over the union, which would
-// result in e.g. `Maybe<number> | Maybe<nothing>` instead of `Maybe<number>`
-type Consolidate<Union> = [Union] extends [Just<infer T>] ? Just<T>
-  : [Union] extends [Nothing<infer T>] ? Nothing<T>
-  : [Union] extends [Failure<infer T>] ? Failure<T>
-  : [Union] extends [Just<infer T> | Nothing<infer T>] ? Maybe<T>
-  : [Union] extends [Just<infer T> | Failure<infer T>] ? Result<T>
-  : [Union] extends [Just<infer T> | Nothing<infer T> | Failure<infer T>] ? Outcome<T>
-  : Union // not never, to allow other types through
 
 /**
  * Union of Just and Nothing.
@@ -203,6 +183,52 @@ interface Failure<T = never> extends Outcome<T> {
   fold<E>(_: any, on_failure: (error: Error) => E): E
 }
 
+type Matcher<Self extends Outcome<T>, T, Sout, NOut, FOut> = {
+  [K in Self["name"]]: K extends "Just" ? (value: T) => Sout
+    : K extends "Nothing" ? () => NOut
+    : K extends "Failure" ? (error: Error) => FOut
+    : never
+}
+
+type Consolidate<Union> = (
+  [Union] extends [Just<infer T>] ? Just<T>
+    : [Union] extends [Nothing<infer T>] ? Nothing<T>
+    : [Union] extends [Failure<infer T>] ? Failure<T>
+    : [Union] extends [Just<infer T> | Nothing<infer T>] ? Maybe<T>
+    : [Union] extends [Just<infer T> | Failure<infer T>] ? Result<T>
+    : [Union] extends [Just<infer T> | Nothing<infer T> | Failure<infer T>] ? Outcome<T>
+    : Union // not never, to allow other types through
+)
+
+type WrappedReturn<T> = T extends Outcome<(arg: any) => infer U> ? U : never
+
+type InnermostWrappedTypeOf<T> = T extends Outcome<infer U> ? InnermostWrappedTypeOf<U> : T
+type WrappedTypeOf<T> = T extends Outcome<infer U> ? U : T
+
+type EnclosingContextOf<O, T> = O extends Just<any> ? Just<T>
+  : O extends Maybe<any> ? Maybe<T>
+  : O extends Result<any> ? Result<T>
+  : O extends Outcome<any> ? Outcome<T>
+  : T
+
+type Join<O> =
+  // if the outer type is Nothing or Failure, return it directly
+  [O] extends [Nothing] ? O : [O] extends [Failure] ? O
+    // otherwise, if the outer type is an Outcome...
+  : [O] extends [Outcome<infer T>] ? (
+      // and its wrapping an Outcome...
+      [T] extends [Outcome] ? (
+          // then if the outer type is a Just, return the wrapped type
+          [O] extends [Just] ? T
+            // otherwise, join the inner and outer contexts around the wrapped type
+            : Consolidate<EnclosingContextOf<O | T, WrappedTypeOf<T>>>
+        )
+        : O // (the wrapped type is not an Outcome)
+    )
+  : O // (the outer type is not an Outcome)
+
+type Flatten<T> = [T] extends [Join<T>] ? T : Flatten<Join<T>>
+
 type Subscriber<O> =
   | { next: (next: O) => void; complete?: () => void }
   | { next?: (next: O) => void; complete: () => void }
@@ -223,7 +249,7 @@ type Subject<O extends Outcome = Outcome> = O & {
   subscribe: (subscriber: Subscriber<O>) => void
 
   next<Self extends Subject<Nothing>>(this: Self, next?: Nothing): void
-  next<U extends O>(next: Inner<U> extends never ? O : U): void
+  next<U extends O>(next: InnermostWrappedTypeOf<U> extends never ? O : U): void
 
   filter<U extends O>(predicate: (element: O) => element is U): Subject<U>
   filter(predicate: (value: O) => boolean): Subject<O>
